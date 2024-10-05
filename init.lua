@@ -224,6 +224,18 @@ require('lazy').setup {
             position = 'float',
           },
         },
+        event_handlers = {
+          {
+            event = 'neo_tree_buffer_enter',
+            handler = function()
+              vim.cmd [[
+                if exists('b:neo_tree_source') && b:neo_tree_source == "filesystem"
+                  silent! NvimTreeClose
+                endif
+              ]]
+            end,
+          },
+        },
       }
     end,
   },
@@ -261,6 +273,13 @@ require('lazy').setup {
     end,
   },
 
+  -- Telescope FZF native extension
+  {
+    'nvim-telescope/telescope-fzf-native.nvim',
+    build = 'make',
+    dependencies = { 'nvim-telescope/telescope.nvim' },
+  },
+
   -- Telescope (fuzzy finder)
   {
     'nvim-telescope/telescope.nvim',
@@ -268,7 +287,7 @@ require('lazy').setup {
     dependencies = { 'nvim-lua/plenary.nvim' },
     config = function()
       require('telescope').setup {}
-      require('telescope').load_extension 'fzf'
+      pcall(require('telescope').load_extension, 'fzf')
     end,
   },
 
@@ -489,19 +508,9 @@ require('lazy').setup {
   },
   {
     'rcarriga/nvim-dap-ui',
-    dependencies = { 'mfussenegger/nvim-dap' },
+    dependencies = { 'mfussenegger/nvim-dap', 'nvim-neotest/nvim-nio' },
     config = function()
       require('dapui').setup()
-    end,
-  },
-
-  -- Telescope FZF native extension
-  {
-    'nvim-telescope/telescope-fzf-native.nvim',
-    run = 'make',
-    dependencies = { 'nvim-telescope/telescope.nvim' },
-    config = function()
-      require('telescope').load_extension 'fzf'
     end,
   },
 
