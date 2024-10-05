@@ -578,26 +578,49 @@ require('lazy').setup {
       }
     end,
   },
-  -- Themery for theme management
+
+  -- SJ (Search and Jump)
   {
-    'zaldih/themery.nvim',
+    'woosaaahh/sj.nvim',
     config = function()
-      require('themery').setup {
-        themes = {
-          {
-            name = 'TokyoNight',
-            colorscheme = 'tokyonight-night',
-          },
-          {
-            name = 'Oxocarbon',
-            colorscheme = 'oxocarbon',
-          },
+      local sj = require 'sj'
+      sj.setup {
+        prompt_prefix = '/',
+        highlights = {
+          SjFocusedLabel = { bold = false, italic = false, fg = '#FFFFFF', bg = '#C000C0' },
+          SjLabel = { bold = true, italic = false, fg = '#000000', bg = '#5AA5DE' },
+          SjLimitReached = { bold = true, italic = false, fg = '#000000', bg = '#DE945A' },
+          SjMatches = { bold = false, italic = false, fg = '#DDDDDD', bg = '#005080' },
+          SjNoMatches = { bold = false, italic = false, fg = '#DE945A' },
+          SjOverlay = { bold = false, italic = false, fg = '#345576' },
         },
-        themeConfigFile = vim.fn.stdpath 'config' .. '/lua/theme.lua',
-        livePreview = true,
+        keymaps = {
+          send_to_qflist = '<C-q>', --- send search result to the quickfix list
+        },
       }
     end,
   },
+
+    -- Themery for theme management
+    {
+      'zaldih/themery.nvim',
+      config = function()
+        require('themery').setup {
+          themes = {
+            {
+              name = 'TokyoNight',
+              colorscheme = 'tokyonight-night',
+            },
+            {
+              name = 'Oxocarbon',
+              colorscheme = 'oxocarbon',
+            },
+          },
+          themeConfigFile = vim.fn.stdpath 'config' .. '/lua/theme.lua',
+          livePreview = true,
+        }
+      end,
+    },
 
   -- Markdown preview
   {
@@ -925,6 +948,12 @@ map('n', '<leader>fR', function()
   require('spectre').open()
 end, { desc = 'Find and Replace' })
 
+-- Add SJ keybinding
+vim.keymap.set('n', '<leader>sj', function()
+  require('sj').run()
+  end, { desc = 'Search and Jump' })
+
+
 -- Undotree toggle
 map('n', '<leader>u', '<cmd>UndotreeToggle<CR>', { desc = 'Toggle Undotree' })
 
@@ -1211,5 +1240,4 @@ require('tokyonight').setup {
   },
 }
 
-print 'Neovim configuration loaded successfully!' 'Neovim configuration loaded successfully!'
-print 'Neovim configuration loaded successfully!'
+print('Neovim configuration loaded successfully!')
