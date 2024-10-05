@@ -1,0 +1,15 @@
+tags
+test.sh
+.luarc.json
+nvim
+lua/
+LICENSE.md
+.stylus.toml
+README.md
+pull_request_template.md
+bug_report.md
+stylua.yml
+kickstart.txt
+.stylua.toml
+spell/
+lazy-lock.json
