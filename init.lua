@@ -324,6 +324,14 @@ require('lazy').setup {
     end,
   },
 
+  -- Symbol outline
+  {
+    'simrat39/symbols-outline.nvim',
+    config = function()
+      require('symbols-outline').setup()
+    end,
+  },
+
   -- Autocompletion
   {
     'hrsh7th/nvim-cmp',
@@ -376,6 +384,12 @@ require('lazy').setup {
     config = function()
       require('nvim-autopairs').setup {}
     end,
+  },
+
+  -- Multi-cursor editing
+  {
+    'mg979/vim-visual-multi',
+    branch = 'master',
   },
 
   -- Enhanced command-line completion
@@ -448,6 +462,14 @@ require('lazy').setup {
       }
     end,
   },
+
+  -- Project-wide search and replace
+  {
+    'nvim-pack/nvim-spectre',
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+    },
+  },
   {
     'zbirenbaum/copilot-cmp',
     after = { 'copilot.lua' },
@@ -464,6 +486,26 @@ require('lazy').setup {
     end,
   },
 
+  -- Markdown preview
+  {
+    'iamcco/markdown-preview.nvim',
+    cmd = { 'MarkdownPreviewToggle', 'MarkdownPreview', 'MarkdownPreviewStop' },
+    build = 'cd app && yarn install',
+    init = function()
+      vim.g.mkdp_filetypes = { 'markdown' }
+    end,
+    ft = { 'markdown' },
+    config = function()
+      -- Keybinding for toggling markdown preview
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'markdown',
+        callback = function()
+          vim.api.nvim_buf_set_keymap(0, 'n', '<leader>mp', ':MarkdownPreviewToggle<CR>', { noremap = true, silent = true })
+        end,
+      })
+    end,
+  },
+
   -- Git integration
   {
     'tpope/vim-fugitive',
@@ -471,6 +513,73 @@ require('lazy').setup {
     config = function()
       vim.keymap.set('n', '<leader>gs', ':Git<CR>', { desc = 'Git status' })
       vim.keymap.set('n', '<leader>gd', ':Gvdiffsplit<CR>', { desc = 'Git diff' })
+    end,
+  },
+  {
+    'lewis6991/gitsigns.nvim',
+    config = function()
+      require('gitsigns').setup {
+        signs = {
+          add = { text = '+' },
+          change = { text = '~' },
+          delete = { text = '_' },
+          topdelete = { text = '‾' },
+          changedelete = { text = '~' },
+        },
+        on_attach = function(bufnr)
+          local gs = package.loaded.gitsigns
+
+          local function map(mode, l, r, opts)
+            opts = opts or {}
+            opts.buffer = bufnr
+            vim.keymap.set(mode, l, r, opts)
+          end
+
+          -- Navigation
+          map('n', ']c', function()
+            if vim.wo.diff then
+              return ']c'
+            end
+            vim.schedule(function()
+              gs.next_hunk()
+            end)
+            return '<Ignore>'
+          end, { expr = true })
+
+          map('n', '[c', function()
+            if vim.wo.diff then
+              return '[c'
+            end
+            vim.schedule(function()
+              gs.prev_hunk()
+            end)
+            return '<Ignore>'
+          end, { expr = true })
+
+          -- Actions
+          map('n', '<leader>hs', gs.stage_hunk)
+          map('n', '<leader>hr', gs.reset_hunk)
+          map('v', '<leader>hs', function()
+            gs.stage_hunk { vim.fn.line '.', vim.fn.line 'v' }
+          end)
+          map('v', '<leader>hr', function()
+            gs.reset_hunk { vim.fn.line '.', vim.fn.line 'v' }
+          end)
+          map('n', '<leader>hS', gs.stage_buffer)
+          map('n', '<leader>hu', gs.undo_stage_hunk)
+          map('n', '<leader>hR', gs.reset_buffer)
+          map('n', '<leader>hp', gs.preview_hunk)
+          map('n', '<leader>hb', function()
+            gs.blame_line { full = true }
+          end)
+          map('n', '<leader>tb', gs.toggle_current_line_blame)
+          map('n', '<leader>hd', gs.diffthis)
+          map('n', '<leader>hD', function()
+            gs.diffthis '~'
+          end)
+          map('n', '<leader>td', gs.toggle_deleted)
+        end,
+      }
     end,
   },
 
@@ -483,11 +592,33 @@ require('lazy').setup {
     end,
   },
 
+  -- Minimap for code overview
+  {
+    'wfxr/minimap.vim',
+    build = 'cargo install --locked code-minimap',
+    cmd = { 'Minimap', 'MinimapClose', 'MinimapToggle', 'MinimapRefresh', 'MinimapUpdateHighlight' },
+    config = function()
+      vim.g.minimap_width = 10
+      vim.g.minimap_auto_start = 1
+      vim.g.minimap_auto_start_win_enter = 1
+
+      -- Keybinding for toggling minimap
+      vim.api.nvim_set_keymap('n', '<leader>mm', ':MinimapToggle<CR>', { noremap = true, silent = true })
+    end,
+  },
+
   -- Debugging
   {
     'mfussenegger/nvim-dap',
+    dependencies = {
+      'rcarriga/nvim-dap-ui',
+      'theHamsta/nvim-dap-virtual-text',
+      'nvim-telescope/telescope-dap.nvim',
+    },
     config = function()
       local dap = require 'dap'
+      local dapui = require 'dapui'
+
       dap.adapters.python = {
         type = 'executable',
         command = '/usr/bin/python3',
@@ -504,13 +635,27 @@ require('lazy').setup {
           end,
         },
       }
-    end,
-  },
-  {
-    'rcarriga/nvim-dap-ui',
-    dependencies = { 'mfussenegger/nvim-dap', 'nvim-neotest/nvim-nio' },
-    config = function()
-      require('dapui').setup()
+
+      dapui.setup()
+      require('nvim-dap-virtual-text').setup()
+      require('telescope').load_extension 'dap'
+
+      -- Debugging keymaps
+      vim.keymap.set('n', '<F5>', dap.continue, { desc = 'Debug: Start/Continue' })
+      vim.keymap.set('n', '<F10>', dap.step_over, { desc = 'Debug: Step Over' })
+      vim.keymap.set('n', '<F11>', dap.step_into, { desc = 'Debug: Step Into' })
+      vim.keymap.set('n', '<F12>', dap.step_out, { desc = 'Debug: Step Out' })
+      vim.keymap.set('n', '<leader>b', dap.toggle_breakpoint, { desc = 'Debug: Toggle Breakpoint' })
+      vim.keymap.set('n', '<leader>B', function()
+        dap.set_breakpoint(vim.fn.input 'Breakpoint condition: ')
+      end, { desc = 'Debug: Set Breakpoint' })
+
+      -- Toggle to see last session result. Without this, you can't see session output in case of unhandled exception.
+      vim.keymap.set('n', '<F7>', dapui.toggle, { desc = 'Debug: See last session result.' })
+
+      dap.listeners.after.event_initialized['dapui_config'] = dapui.open
+      dap.listeners.before.event_terminated['dapui_config'] = dapui.close
+      dap.listeners.before.event_exited['dapui_config'] = dapui.close
     end,
   },
 
@@ -592,11 +737,32 @@ map('n', '<leader>e', '<cmd>Neotree toggle<CR>', { desc = 'Toggle file explorer'
 -- Telescope keybindings
 local builtin = require 'telescope.builtin'
 map('n', '<leader>ff', builtin.find_files, { desc = 'Find files' })
+map('n', '<leader>fg', builtin.live_grep, { desc = 'Live grep' })
+map('n', '<leader>fb', builtin.buffers, { desc = 'Find buffers' })
+map('n', '<leader>fh', builtin.help_tags, { desc = 'Help tags' })
 -- Formatting keybinding
-map('n', '<leader>f', vim.lsp.buf.format, { desc = 'Format code' })
+map('n', '<leader>fm', vim.lsp.buf.format, { desc = 'Format code' })
+-- Project-wide search and replace
+map('n', '<leader>fr', function()
+  require('spectre').open()
+end, { desc = 'Find and Replace' })
 
 -- Undotree toggle
 map('n', '<leader>u', '<cmd>UndotreeToggle<CR>', { desc = 'Toggle Undotree' })
+
+-- Symbol outline toggle
+map('n', '<leader>so', '<cmd>SymbolsOutline<CR>', { desc = 'Toggle Symbol Outline' })
+
+-- Minimap toggle
+map('n', '<leader>mm', '<cmd>MinimapToggle<CR>', { desc = 'Toggle Minimap' })
+
+-- Markdown preview toggle (only in markdown files)
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'markdown',
+  callback = function()
+    vim.api.nvim_buf_set_keymap(0, 'n', '<leader>mp', ':MarkdownPreviewToggle<CR>', { noremap = true, silent = true, desc = 'Toggle Markdown Preview' })
+  end,
+})
 
 -- **Avante.nvim Keybindings**
 -- Sidebar toggle
