@@ -601,26 +601,26 @@ require('lazy').setup {
     end,
   },
 
-    -- Themery for theme management
-    {
-      'zaldih/themery.nvim',
-      config = function()
-        require('themery').setup {
-          themes = {
-            {
-              name = 'TokyoNight',
-              colorscheme = 'tokyonight-night',
-            },
-            {
-              name = 'Oxocarbon',
-              colorscheme = 'oxocarbon',
-            },
+  -- Themery for theme management
+  {
+    'zaldih/themery.nvim',
+    config = function()
+      require('themery').setup {
+        themes = {
+          {
+            name = 'TokyoNight',
+            colorscheme = 'tokyonight-night',
           },
-          themeConfigFile = vim.fn.stdpath 'config' .. '/lua/theme.lua',
-          livePreview = true,
-        }
-      end,
-    },
+          {
+            name = 'Oxocarbon',
+            colorscheme = 'oxocarbon',
+          },
+        },
+        themeConfigFile = vim.fn.stdpath 'config' .. '/lua/theme.lua',
+        livePreview = true,
+      }
+    end,
+  },
 
   -- Markdown preview
   {
@@ -907,17 +907,17 @@ require('trouble').setup {
 }
 
 -- Trouble keybindings
-map('n', '<leader>xx', '<cmd>TroubleToggle<cr>', { silent = true, noremap = true })
-map('n', '<leader>xw', '<cmd>TroubleToggle workspace_diagnostics<cr>', { silent = true, noremap = true })
-map('n', '<leader>xd', '<cmd>TroubleToggle document_diagnostics<cr>', { silent = true, noremap = true })
-map('n', '<leader>xl', '<cmd>TroubleToggle loclist<cr>', { silent = true, noremap = true })
-map('n', '<leader>xq', '<cmd>TroubleToggle quickfix<cr>', { silent = true, noremap = true })
-map('n', 'gR', '<cmd>TroubleToggle lsp_references<cr>', { silent = true, noremap = true })
+map('n', '<leader>xx', '<cmd>TroubleToggle<cr>', { silent = true, noremap = true, desc = 'Toggle Trouble' })
+map('n', '<leader>xw', '<cmd>TroubleToggle workspace_diagnostics<cr>', { silent = true, noremap = true, desc = 'Trouble: Workspace Diagnostics' })
+map('n', '<leader>xd', '<cmd>TroubleToggle document_diagnostics<cr>', { silent = true, noremap = true, desc = 'Trouble: Document Diagnostics' })
+map('n', '<leader>xl', '<cmd>TroubleToggle loclist<cr>', { silent = true, noremap = true, desc = 'Trouble: Location List' })
+map('n', '<leader>xq', '<cmd>TroubleToggle quickfix<cr>', { silent = true, noremap = true, desc = 'Trouble: Quickfix List' })
+map('n', 'gR', '<cmd>TroubleToggle lsp_references<cr>', { silent = true, noremap = true, desc = 'Trouble: LSP References' })
 
 -- Diffview keybindings
-vim.keymap.set('n', '<leader>dv', '<cmd>DiffviewOpen<CR>', { desc = 'Open Diffview' })
-vim.keymap.set('n', '<leader>dx', '<cmd>DiffviewClose<CR>', { desc = 'Close Diffview' })
-vim.keymap.set('n', '<leader>dh', '<cmd>DiffviewFileHistory<CR>', { desc = 'View File History' })
+vim.keymap.set('n', '<leader>dv', '<cmd>DiffviewOpen<CR>', { desc = 'Diffview: Open' })
+vim.keymap.set('n', '<leader>dx', '<cmd>DiffviewClose<CR>', { desc = 'Diffview: Close' })
+vim.keymap.set('n', '<leader>dh', '<cmd>DiffviewFileHistory<CR>', { desc = 'Diffview: File History' })
 
 -- General keybindings
 map('n', '<leader>w', '<cmd>w<CR>', { desc = 'Save file' })
@@ -937,22 +937,21 @@ map('n', '<leader>fo', builtin.oldfiles, { desc = 'Search recently opened files'
 -- fzf-lua keybindings
 map('n', '<leader>fa', function()
   require('fzf-lua').grep()
-end, { desc = 'Search with Grep' })
+end, { desc = 'Search with Grep (fzf-lua)' })
 map('n', '<leader>fr', function()
   require('fzf-lua').live_grep()
-end, { desc = 'Search with Live Grep' })
+end, { desc = 'Search with Live Grep (fzf-lua)' })
 -- Formatting keybinding
 map('n', '<leader>fm', vim.lsp.buf.format, { desc = 'Format code' })
 -- Project-wide search and replace
 map('n', '<leader>fR', function()
   require('spectre').open()
-end, { desc = 'Find and Replace' })
+end, { desc = 'Find and Replace (Spectre)' })
 
 -- Add SJ keybinding
 vim.keymap.set('n', '<leader>sj', function()
   require('sj').run()
-  end, { desc = 'Search and Jump' })
-
+end, { desc = 'Search and Jump (SJ)' })
 
 -- Undotree toggle
 map('n', '<leader>u', '<cmd>UndotreeToggle<CR>', { desc = 'Toggle Undotree' })
@@ -964,23 +963,43 @@ map('n', '<leader>so', '<cmd>SymbolsOutline<CR>', { desc = 'Toggle Symbol Outlin
 map('n', '<leader>mm', '<cmd>MinimapToggle<CR>', { desc = 'Toggle Minimap' })
 
 -- Hop keybindings
-map('n', 'f', "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.AFTER_CURSOR, current_line_only = true })<cr>", {})
-map('n', 'F', "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.BEFORE_CURSOR, current_line_only = true })<cr>", {})
+map(
+  'n',
+  'f',
+  "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.AFTER_CURSOR, current_line_only = true })<cr>",
+  { desc = 'Hop forward to char' }
+)
+map(
+  'n',
+  'F',
+  "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.BEFORE_CURSOR, current_line_only = true })<cr>",
+  { desc = 'Hop backward to char' }
+)
 map(
   'o',
   'f',
   "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.AFTER_CURSOR, current_line_only = true, inclusive_jump = true })<cr>",
-  {}
+  { desc = 'Hop forward to char (operator)' }
 )
 map(
   'o',
   'F',
   "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.BEFORE_CURSOR, current_line_only = true, inclusive_jump = true })<cr>",
-  {}
+  { desc = 'Hop backward to char (operator)' }
 )
-map('', 't', "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.AFTER_CURSOR, current_line_only = true })<cr>", {})
-map('', 'T', "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.BEFORE_CURSOR, current_line_only = true })<cr>", {})
-map('n', '<leader>hw', '<cmd>HopWord<cr>', { desc = 'Hop Word' })
+map(
+  '',
+  't',
+  "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.AFTER_CURSOR, current_line_only = true })<cr>",
+  { desc = 'Hop forward to before char' }
+)
+map(
+  '',
+  'T',
+  "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.BEFORE_CURSOR, current_line_only = true })<cr>",
+  { desc = 'Hop backward to before char' }
+)
+map('n', '<leader>hw', '<cmd>HopWord<cr>', { desc = 'Hop to word' })
 
 -- Markdown preview toggle (only in markdown files)
 vim.api.nvim_create_autocmd('FileType', {
@@ -996,13 +1015,13 @@ map('n', '<leader>aa', '<cmd>AvanteToggle<CR>', { desc = 'Avante: Toggle Sidebar
 
 -- LSP keybindings
 map('n', 'gd', vim.lsp.buf.definition, { desc = 'Go to definition' })
-map('n', 'K', vim.lsp.buf.hover, { desc = 'Hover information' })
+map('n', 'K', vim.lsp.buf.hover, { desc = 'Show hover information' })
 
 -- Window navigation
-map('n', '<C-h>', '<C-w>h', { desc = 'Move to window left' })
+map('n', '<C-h>', '<C-w>h', { desc = 'Move to left window' })
 map('n', '<C-j>', '<C-w>j', { desc = 'Move to window below' })
 map('n', '<C-k>', '<C-w>k', { desc = 'Move to window above' })
-map('n', '<C-l>', '<C-w>l', { desc = 'Move to window right' })
+map('n', '<C-l>', '<C-w>l', { desc = 'Move to right window' })
 
 -- Global focus change
 function _G.change_focus()
@@ -1031,14 +1050,14 @@ map('n', '<leader>ar', '<cmd>AvanteRefresh<CR>', { desc = 'Avante: Refresh Sideb
 -- Edit selected blocks
 map('v', '<leader>ae', '<cmd>AvanteEdit<CR>', { desc = 'Avante: Edit Selected Blocks' })
 -- Conflict resolution keybindings
-map('n', 'co', '<cmd>AvanteConflictChooseOurs<CR>', { desc = 'Avante: Choose Ours' })
-map('n', 'ct', '<cmd>AvanteConflictChooseTheirs<CR>', { desc = 'Avante: Choose Theirs' })
-map('n', 'ca', '<cmd>AvanteConflictChooseAllTheirs<CR>', { desc = 'Avante: Choose All Theirs' })
-map('n', 'c0', '<cmd>AvanteConflictChooseNone<CR>', { desc = 'Avante: Choose None' })
-map('n', 'cb', '<cmd>AvanteConflictChooseBoth<CR>', { desc = 'Avante: Choose Both' })
-map('n', 'cc', '<cmd>AvanteConflictChooseCursor<CR>', { desc = 'Avante: Choose Cursor' })
-map('n', ']x', '<cmd>AvanteConflictNext<CR>', { desc = 'Avante: Next Conflict' })
-map('n', '[x', '<cmd>AvanteConflictPrev<CR>', { desc = 'Avante: Previous Conflict' })
+map('n', 'co', '<cmd>AvanteConflictChooseOurs<CR>', { desc = 'Avante: Choose Ours in conflict' })
+map('n', 'ct', '<cmd>AvanteConflictChooseTheirs<CR>', { desc = 'Avante: Choose Theirs in conflict' })
+map('n', 'ca', '<cmd>AvanteConflictChooseAllTheirs<CR>', { desc = 'Avante: Choose All Theirs in conflicts' })
+map('n', 'c0', '<cmd>AvanteConflictChooseNone<CR>', { desc = 'Avante: Choose None in conflict' })
+map('n', 'cb', '<cmd>AvanteConflictChooseBoth<CR>', { desc = 'Avante: Choose Both in conflict' })
+map('n', 'cc', '<cmd>AvanteConflictChooseCursor<CR>', { desc = 'Avante: Choose at Cursor in conflict' })
+map('n', ']x', '<cmd>AvanteConflictNext<CR>', { desc = 'Avante: Go to Next Conflict' })
+map('n', '[x', '<cmd>AvanteConflictPrev<CR>', { desc = 'Avante: Go to Previous Conflict' })
 -- Jump between codeblocks
 map('n', ']]', '<cmd>AvanteJumpNext<CR>', { desc = 'Avante: Jump to Next Codeblock' })
 map('n', '[[', '<cmd>AvanteJumpPrev<CR>', { desc = 'Avante: Jump to Previous Codeblock' })
@@ -1222,12 +1241,12 @@ end
 vim.keymap.set('n', '<leader>ts', toggle_theme, { desc = 'Toggle color scheme' })
 
 -- Keybinding for opening Themery
-vim.keymap.set('n', '<leader>th', ':Themery<CR>', { desc = 'Open Themery' })
+vim.keymap.set('n', '<leader>th', ':Themery<CR>', { desc = 'Open Themery theme selector' })
 
 -- Keybinding for smart-open
 vim.keymap.set('n', '<leader><leader>', function()
   require('telescope').extensions.smart_open.smart_open()
-end, { noremap = true, silent = true, desc = 'Smart Open' })
+end, { noremap = true, silent = true, desc = 'Smart Open (Telescope)' })
 
 -- Set initial colorscheme
 vim.cmd.colorscheme 'tokyonight-night'
@@ -1240,4 +1259,4 @@ require('tokyonight').setup {
   },
 }
 
-print('Neovim configuration loaded successfully!')
+print 'Neovim configuration loaded successfully!'
