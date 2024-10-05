@@ -92,6 +92,27 @@ vim.o.background = 'dark'
 vim.cmd 'syntax enable'
 vim.cmd 'syntax on'
 
+-- Set the color scheme
+local function set_colorscheme()
+  local color_scheme = vim.g.color_scheme or 'tokyonight'
+  if color_scheme == 'tokyonight' then
+    require('tokyonight').setup {
+      style = 'night',
+      transparent = true,
+      styles = {
+        sidebars = 'transparent',
+        floats = 'transparent',
+      },
+    }
+    vim.cmd.colorscheme 'tokyonight-night'
+  elseif color_scheme == 'oxocarbon' then
+    vim.cmd.colorscheme 'oxocarbon'
+  end
+end
+
+-- Call the function to set the color scheme
+set_colorscheme()
+
 -- Neovide settings (if using Neovide)
 if vim.g.neovide then
   vim.g.neovide_refresh_rate = 120
@@ -240,22 +261,16 @@ require('lazy').setup {
     end,
   },
 
-  -- Color scheme
+  -- Color schemes
   {
     'folke/tokyonight.nvim',
     lazy = false,
     priority = 1000,
-    config = function()
-      require('tokyonight').setup {
-        style = 'night',
-        transparent = true,
-        styles = {
-          sidebars = 'transparent',
-          floats = 'transparent',
-        },
-      }
-      vim.cmd.colorscheme 'tokyonight-night'
-    end,
+  },
+  {
+    'nyoom-engineering/oxocarbon.nvim',
+    lazy = false,
+    priority = 1000,
   },
 
   -- Status line
