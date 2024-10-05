@@ -1113,6 +1113,16 @@ lspconfig.rust_analyzer.setup {
 -- Pyright (Python LSP)
 lspconfig.pyright.setup {
   capabilities = capabilities,
+  cmd = { 'pyright-langserver', '--stdio' },
+  settings = {
+    python = {
+      analysis = {
+        autoSearchPaths = true,
+        useLibraryCodeForTypes = true,
+        diagnosticMode = 'workspace',
+      },
+    },
+  },
 }
 
 -- null-ls setup for formatting and linting
