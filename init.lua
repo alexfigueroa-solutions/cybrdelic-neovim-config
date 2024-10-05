@@ -893,7 +893,7 @@ map(
 )
 map('', 't', "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.AFTER_CURSOR, current_line_only = true })<cr>", {})
 map('', 'T', "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.BEFORE_CURSOR, current_line_only = true })<cr>", {})
-map('n', '<leader>e', '<cmd>HopWord<cr>', {})
+map('n', '<leader>hw', '<cmd>HopWord<cr>', { desc = 'Hop Word' })
 
 -- Markdown preview toggle (only in markdown files)
 vim.api.nvim_create_autocmd('FileType', {
