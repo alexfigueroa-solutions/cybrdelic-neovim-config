@@ -578,6 +578,26 @@ require('lazy').setup {
       }
     end,
   },
+  -- Themery for theme management
+  {
+    'zaldih/themery.nvim',
+    config = function()
+      require('themery').setup {
+        themes = {
+          {
+            name = 'TokyoNight',
+            colorscheme = 'tokyonight-night',
+          },
+          {
+            name = 'Oxocarbon',
+            colorscheme = 'oxocarbon',
+          },
+        },
+        themeConfigFile = vim.fn.stdpath 'config' .. '/lua/theme.lua',
+        livePreview = true,
+      }
+    end,
+  },
 
   -- Markdown preview
   {
@@ -1158,6 +1178,9 @@ end
 
 -- Keybinding for theme switching
 vim.keymap.set('n', '<leader>ts', toggle_theme, { desc = 'Toggle color scheme' })
+
+-- Keybinding for opening Themery
+vim.keymap.set('n', '<leader>th', ':Themery<CR>', { desc = 'Open Themery' })
 
 -- Set initial colorscheme
 vim.cmd.colorscheme 'tokyonight-night'
