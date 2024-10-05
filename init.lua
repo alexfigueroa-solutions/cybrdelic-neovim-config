@@ -92,27 +92,6 @@ vim.o.background = 'dark'
 vim.cmd 'syntax enable'
 vim.cmd 'syntax on'
 
--- Set the color scheme
-local function set_colorscheme()
-  local color_scheme = vim.g.color_scheme or 'tokyonight'
-  if color_scheme == 'tokyonight' then
-    require('tokyonight').setup {
-      style = 'night',
-      transparent = true,
-      styles = {
-        sidebars = 'transparent',
-        floats = 'transparent',
-      },
-    }
-    vim.cmd.colorscheme 'tokyonight-night'
-  elseif color_scheme == 'oxocarbon' then
-    vim.cmd.colorscheme 'oxocarbon'
-  end
-end
-
--- Call the function to set the color scheme
-set_colorscheme()
-
 -- Neovide settings (if using Neovide)
 if vim.g.neovide then
   vim.g.neovide_refresh_rate = 120
@@ -1158,5 +1137,37 @@ load_anthropic_api_key()
 
 -- **Load avante_lib**
 require('avante_lib').load()
+
+-- Theme switcher function
+local function toggle_theme()
+  if vim.g.colors_name == 'tokyonight-night' then
+    vim.cmd.colorscheme 'oxocarbon'
+    vim.o.background = 'dark'
+  else
+    vim.cmd.colorscheme 'tokyonight-night'
+    require('tokyonight').setup {
+      style = 'night',
+      transparent = true,
+      styles = {
+        sidebars = 'transparent',
+        floats = 'transparent',
+      },
+    }
+  end
+end
+
+-- Keybinding for theme switching
+vim.keymap.set('n', '<leader>ts', toggle_theme, { desc = 'Toggle color scheme' })
+
+-- Set initial colorscheme
+vim.cmd.colorscheme 'tokyonight-night'
+require('tokyonight').setup {
+  style = 'night',
+  transparent = true,
+  styles = {
+    sidebars = 'transparent',
+    floats = 'transparent',
+  },
+}
 
 print 'Neovim configuration loaded successfully!'
