@@ -269,6 +269,34 @@ require('lazy').setup {
           component_separators = '|',
           section_separators = { left = '', right = '' },
         },
+        sections = {
+          lualine_c = {
+            {
+              'filename',
+              file_status = true,
+              path = 1,
+            },
+            {
+              function()
+                local msg = 'No Active Lsp'
+                local buf_ft = vim.api.nvim_buf_get_option(0, 'filetype')
+                local clients = vim.lsp.get_active_clients()
+                if next(clients) == nil then
+                  return msg
+                end
+                for _, client in ipairs(clients) do
+                  local filetypes = client.config.filetypes
+                  if filetypes and vim.fn.index(filetypes, buf_ft) ~= -1 then
+                    return client.name
+                  end
+                end
+                return msg
+              end,
+              icon = ' LSP:',
+              color = { fg = '#ffffff', gui = 'bold' },
+            },
+          },
+        },
       }
     end,
   },
@@ -297,6 +325,7 @@ require('lazy').setup {
     dependencies = {
       'williamboman/mason.nvim', -- LSP installer
       'williamboman/mason-lspconfig.nvim',
+      'folke/trouble.nvim', -- Better diagnostic display
     },
   },
 
@@ -320,6 +349,19 @@ require('lazy').setup {
         indent = {
           enable = true,
         },
+      }
+    end,
+  },
+
+  -- Better code folding
+  {
+    'kevinhwang91/nvim-ufo',
+    dependencies = 'kevinhwang91/promise-async',
+    config = function()
+      require('ufo').setup {
+        provider_selector = function(bufnr, filetype, buftype)
+          return { 'treesitter', 'indent' }
+        end,
       }
     end,
   },
@@ -386,10 +428,29 @@ require('lazy').setup {
     end,
   },
 
+  -- Indent guides
+  {
+    'lukas-reineke/indent-blankline.nvim',
+    config = function()
+      require('indent_blankline').setup {
+        show_current_context = true,
+        show_current_context_start = true,
+      }
+    end,
+  },
+
   -- Multi-cursor editing
   {
     'mg979/vim-visual-multi',
     branch = 'master',
+  },
+
+  -- Better comment management
+  {
+    'numToStr/Comment.nvim',
+    config = function()
+      require('Comment').setup()
+    end,
   },
 
   -- Enhanced command-line completion
@@ -483,6 +544,25 @@ require('lazy').setup {
     'goolord/alpha-nvim',
     config = function()
       require('alpha').setup(require('alpha.themes.dashboard').config)
+    end,
+  },
+
+  -- Session management
+  {
+    'rmagatti/auto-session',
+    config = function()
+      require('auto-session').setup {
+        log_level = 'error',
+        auto_session_suppress_dirs = { '~/', '~/Projects', '~/Downloads', '/' },
+        auto_session_enable_last_session = false,
+        auto_session_root_dir = vim.fn.stdpath 'data' .. '/sessions/',
+        auto_session_enabled = true,
+        auto_save_enabled = nil,
+        auto_restore_enabled = nil,
+        auto_session_use_git_branch = nil,
+        -- the configs below are lua only
+        bypass_session_save_file_types = nil,
+      }
     end,
   },
 
@@ -724,6 +804,46 @@ local function map(mode, lhs, rhs, opts)
   vim.keymap.set(mode, lhs, rhs, options)
 end
 
+-- Trouble setup
+require('trouble').setup {
+  position = 'bottom',
+  height = 10,
+  width = 50,
+  icons = true,
+  mode = 'workspace_diagnostics',
+  fold_open = '',
+  fold_closed = '',
+  group = true,
+  padding = true,
+  action_keys = {
+    close = 'q',
+    cancel = '<esc>',
+    refresh = 'r',
+    jump = { '<cr>', '<tab>' },
+    open_split = { '<c-x>' },
+    open_vsplit = { '<c-v>' },
+    open_tab = { '<c-t>' },
+    jump_close = { 'o' },
+    toggle_mode = 'm',
+    toggle_preview = 'P',
+    hover = 'K',
+    preview = 'p',
+    close_folds = { 'zM', 'zm' },
+    open_folds = { 'zR', 'zr' },
+    toggle_fold = { 'zA', 'za' },
+    previous = 'k',
+    next = 'j',
+  },
+}
+
+-- Trouble keybindings
+map('n', '<leader>xx', '<cmd>TroubleToggle<cr>', { silent = true, noremap = true })
+map('n', '<leader>xw', '<cmd>TroubleToggle workspace_diagnostics<cr>', { silent = true, noremap = true })
+map('n', '<leader>xd', '<cmd>TroubleToggle document_diagnostics<cr>', { silent = true, noremap = true })
+map('n', '<leader>xl', '<cmd>TroubleToggle loclist<cr>', { silent = true, noremap = true })
+map('n', '<leader>xq', '<cmd>TroubleToggle quickfix<cr>', { silent = true, noremap = true })
+map('n', 'gR', '<cmd>TroubleToggle lsp_references<cr>', { silent = true, noremap = true })
+
 -- Diffview keybindings
 vim.keymap.set('n', '<leader>dv', '<cmd>DiffviewOpen<CR>', { desc = 'Open Diffview' })
 vim.keymap.set('n', '<leader>dx', '<cmd>DiffviewClose<CR>', { desc = 'Close Diffview' })
@@ -755,6 +875,25 @@ map('n', '<leader>so', '<cmd>SymbolsOutline<CR>', { desc = 'Toggle Symbol Outlin
 
 -- Minimap toggle
 map('n', '<leader>mm', '<cmd>MinimapToggle<CR>', { desc = 'Toggle Minimap' })
+
+-- Hop keybindings
+map('n', 'f', "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.AFTER_CURSOR, current_line_only = true })<cr>", {})
+map('n', 'F', "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.BEFORE_CURSOR, current_line_only = true })<cr>", {})
+map(
+  'o',
+  'f',
+  "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.AFTER_CURSOR, current_line_only = true, inclusive_jump = true })<cr>",
+  {}
+)
+map(
+  'o',
+  'F',
+  "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.BEFORE_CURSOR, current_line_only = true, inclusive_jump = true })<cr>",
+  {}
+)
+map('', 't', "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.AFTER_CURSOR, current_line_only = true })<cr>", {})
+map('', 'T', "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.BEFORE_CURSOR, current_line_only = true })<cr>", {})
+map('n', '<leader>e', '<cmd>HopWord<cr>', {})
 
 -- Markdown preview toggle (only in markdown files)
 vim.api.nvim_create_autocmd('FileType', {
