@@ -619,6 +619,19 @@ require('lazy').setup {
     end,
   },
 
+  -- Smart-open for fast file-finding
+  {
+    'danielfalk/smart-open.nvim',
+    branch = '0.2.x',
+    config = function()
+      require('telescope').load_extension 'smart_open'
+    end,
+    dependencies = {
+      'kkharji/sqlite.lua',
+      { 'nvim-telescope/telescope-fzf-native.nvim', build = 'make' },
+      { 'nvim-telescope/telescope-fzy-native.nvim' },
+    },
+  },
   -- Git integration
   {
     'tpope/vim-fugitive',
@@ -1182,6 +1195,11 @@ vim.keymap.set('n', '<leader>ts', toggle_theme, { desc = 'Toggle color scheme' }
 -- Keybinding for opening Themery
 vim.keymap.set('n', '<leader>th', ':Themery<CR>', { desc = 'Open Themery' })
 
+-- Keybinding for smart-open
+vim.keymap.set('n', '<leader><leader>', function()
+  require('telescope').extensions.smart_open.smart_open()
+end, { noremap = true, silent = true, desc = 'Smart Open' })
+
 -- Set initial colorscheme
 vim.cmd.colorscheme 'tokyonight-night'
 require('tokyonight').setup {
@@ -1193,4 +1211,5 @@ require('tokyonight').setup {
   },
 }
 
+print 'Neovim configuration loaded successfully!' 'Neovim configuration loaded successfully!'
 print 'Neovim configuration loaded successfully!'
