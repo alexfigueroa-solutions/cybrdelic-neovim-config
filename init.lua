@@ -304,8 +304,17 @@ require('lazy').setup {
   -- Telescope FZF native extension
   {
     'nvim-telescope/telescope-fzf-native.nvim',
-    build = 'make',
+    build = 'cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release && cmake --install build --prefix build',
     dependencies = { 'nvim-telescope/telescope.nvim' },
+  },
+
+  -- fzf-lua for fuzzy finding
+  {
+    'ibhagwan/fzf-lua',
+    dependencies = { 'nvim-tree/nvim-web-devicons' },
+    config = function()
+      require('fzf-lua').setup {}
+    end,
   },
 
   -- Telescope (fuzzy finder)
@@ -314,8 +323,18 @@ require('lazy').setup {
     branch = '0.1.x',
     dependencies = { 'nvim-lua/plenary.nvim' },
     config = function()
-      require('telescope').setup {}
-      pcall(require('telescope').load_extension, 'fzf')
+      local telescope = require 'telescope'
+      telescope.setup {
+        extensions = {
+          fzf = {
+            fuzzy = true,
+            override_generic_sorter = true,
+            override_file_sorter = true,
+            case_mode = 'smart_case',
+          },
+        },
+      }
+      pcall(telescope.load_extension, 'fzf')
     end,
   },
 
@@ -860,10 +879,21 @@ map('n', '<leader>ff', builtin.find_files, { desc = 'Find files' })
 map('n', '<leader>fg', builtin.live_grep, { desc = 'Live grep' })
 map('n', '<leader>fb', builtin.buffers, { desc = 'Find buffers' })
 map('n', '<leader>fh', builtin.help_tags, { desc = 'Help tags' })
+map('n', '<leader>fs', builtin.grep_string, { desc = 'Search for word under cursor' })
+map('n', '<leader>fc', builtin.current_buffer_fuzzy_find, { desc = 'Fuzzy search in current buffer' })
+map('n', '<leader>fp', builtin.git_files, { desc = 'Search Git files' })
+map('n', '<leader>fo', builtin.oldfiles, { desc = 'Search recently opened files' })
+-- fzf-lua keybindings
+map('n', '<leader>fa', function()
+  require('fzf-lua').grep()
+end, { desc = 'Search with Grep' })
+map('n', '<leader>fr', function()
+  require('fzf-lua').live_grep()
+end, { desc = 'Search with Live Grep' })
 -- Formatting keybinding
 map('n', '<leader>fm', vim.lsp.buf.format, { desc = 'Format code' })
 -- Project-wide search and replace
-map('n', '<leader>fr', function()
+map('n', '<leader>fR', function()
   require('spectre').open()
 end, { desc = 'Find and Replace' })
 
