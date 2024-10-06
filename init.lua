@@ -1053,6 +1053,49 @@ local function map(mode, lhs, rhs, opts)
   vim.keymap.set(mode, lhs, rhs, options)
 end
 
+-- Which-key setup
+local wk = require 'which-key'
+wk.setup {
+  icons = {
+    breadcrumb = '»', -- symbol used in the command line area that shows your active key combo
+    separator = '➜', -- symbol used between a key and it's label
+    group = '+', -- symbol prepended to a group
+  },
+  window = {
+    border = 'single', -- none, single, double, shadow
+    position = 'bottom', -- bottom, top
+  },
+}
+
+-- Register which-key groups
+wk.register {
+  ['<leader>'] = {
+    f = { name = ' Find' },
+    g = { name = ' Git' },
+    l = { name = ' LSP' },
+    t = { name = '󰙨 Toggle' },
+    x = { name = ' Trouble' },
+    a = { name = ' Avante' },
+    d = { name = ' Debug' },
+    h = { name = ' Git Hunks' },
+    m = { name = ' Markdown' },
+    ['<leader>'] = { name = ' Smart Open' },
+  },
+}
+
+-- Register individual keybindings
+wk.register({
+  ['<leader>th'] = { ':Themery<CR>', 'Open Themery theme selector' },
+  ['<leader>ts'] = { 'Toggle color scheme' },
+  ['<leader>tc'] = { 'Copy user flows to clipboard' },
+  ['<leader>tu'] = { 'Analyze user flows' },
+  ['<leader>mp'] = { ':MarkdownPreviewToggle<CR>', 'Toggle Markdown Preview' },
+  ['<leader><leader>'] = { 'Smart Open (Telescope)' },
+})
+
+-- File explorer keybinding
+map('n', '<leader>e', '<cmd>Neotree toggle<CR>', { desc = 'Toggle file explorer' })
+
 -- Trouble setup
 require('trouble').setup {
   position = 'bottom',
@@ -1085,37 +1128,171 @@ require('trouble').setup {
   },
 }
 
--- Trouble keybindings
-map('n', '<leader>xx', '<cmd>TroubleToggle<cr>', { silent = true, noremap = true, desc = 'Toggle Trouble' })
-map('n', '<leader>xw', '<cmd>TroubleToggle workspace_diagnostics<cr>', { silent = true, noremap = true, desc = 'Trouble: Workspace Diagnostics' })
-map('n', '<leader>xd', '<cmd>TroubleToggle document_diagnostics<cr>', { silent = true, noremap = true, desc = 'Trouble: Document Diagnostics' })
-map('n', '<leader>xl', '<cmd>TroubleToggle loclist<cr>', { silent = true, noremap = true, desc = 'Trouble: Location List' })
-map('n', '<leader>xq', '<cmd>TroubleToggle quickfix<cr>', { silent = true, noremap = true, desc = 'Trouble: Quickfix List' })
-map('n', 'gR', '<cmd>TroubleToggle lsp_references<cr>', { silent = true, noremap = true, desc = 'Trouble: LSP References' })
-
--- Diffview keybindings
-vim.keymap.set('n', '<leader>dv', '<cmd>DiffviewOpen<CR>', { desc = 'Diffview: Open' })
-vim.keymap.set('n', '<leader>dx', '<cmd>DiffviewClose<CR>', { desc = 'Diffview: Close' })
-vim.keymap.set('n', '<leader>dh', '<cmd>DiffviewFileHistory<CR>', { desc = 'Diffview: File History' })
+-- Keybinding groups
+local wk = require 'which-key'
 
 -- General keybindings
-map('n', '<leader>w', '<cmd>w<CR>', { desc = 'Save file' })
-map('n', '<leader>q', '<cmd>q<CR>', { desc = 'Quit' })
-map('n', '<leader>e', '<cmd>Neotree toggle<CR>', { desc = 'Toggle file explorer' })
+wk.register {
+  ['<leader>'] = {
+    w = { '<cmd>w<CR>', 'Save file' },
+    q = { '<cmd>q<CR>', 'Quit' },
+    e = { '<cmd>Neotree toggle<CR>', 'Toggle file explorer' },
+    ['<Tab>'] = { '<cmd>lua change_focus()<CR>', 'Change focus globally' },
+    u = { '<cmd>UndotreeToggle<CR>', 'Toggle Undotree' },
+    f = { vim.lsp.buf.format, 'Format code' },
+  },
+}
 
--- Telescope keybindings
-local builtin = require 'telescope.builtin'
-map('n', '<leader>ff', builtin.find_files, { desc = 'Find files' })
-map('n', '<leader>fg', builtin.live_grep, { desc = 'Live grep' })
-map('n', '<leader>fb', builtin.buffers, { desc = 'Find buffers' })
-map('n', '<leader>fh', builtin.help_tags, { desc = 'Help tags' })
-map('n', '<leader>fs', builtin.grep_string, { desc = 'Search for word under cursor' })
-map('n', '<leader>fc', builtin.current_buffer_fuzzy_find, { desc = 'Fuzzy search in current buffer' })
-map('n', '<leader>fp', builtin.git_files, { desc = 'Search Git files' })
-map('n', '<leader>fo', builtin.oldfiles, { desc = 'Search recently opened files' })
+-- Find keybindings
+wk.register {
+  ['<leader>f'] = {
+    name = ' Find',
+    f = { require('telescope.builtin').find_files, 'Find files' },
+    g = { require('telescope.builtin').live_grep, 'Live grep' },
+    b = { require('telescope.builtin').buffers, 'Find buffers' },
+    h = { require('telescope.builtin').help_tags, 'Help tags' },
+    s = { require('telescope.builtin').grep_string, 'Search for word under cursor' },
+    c = { require('telescope.builtin').current_buffer_fuzzy_find, 'Fuzzy search in current buffer' },
+    p = { require('telescope.builtin').git_files, 'Search Git files' },
+    o = { require('telescope.builtin').oldfiles, 'Search recently opened files' },
+    a = {
+      function()
+        require('fzf-lua').grep()
+      end,
+      'Search with Grep (fzf-lua)',
+    },
+    r = {
+      function()
+        require('fzf-lua').live_grep()
+      end,
+      'Search with Live Grep (fzf-lua)',
+    },
+    m = { vim.lsp.buf.format, 'Format code' },
+    R = {
+      function()
+        require('spectre').open()
+      end,
+      'Find and Replace (Spectre)',
+    },
+  },
+}
 
--- Enhanced Ctrl+F search
-local function smart_search()
+-- Trouble keybindings
+wk.register {
+  ['<leader>x'] = {
+    name = ' Trouble',
+    x = { '<cmd>TroubleToggle<cr>', 'Toggle Trouble' },
+    w = { '<cmd>TroubleToggle workspace_diagnostics<cr>', 'Workspace Diagnostics' },
+    d = { '<cmd>TroubleToggle document_diagnostics<cr>', 'Document Diagnostics' },
+    l = { '<cmd>TroubleToggle loclist<cr>', 'Location List' },
+    q = { '<cmd>TroubleToggle quickfix<cr>', 'Quickfix List' },
+  },
+  g = {
+    R = { '<cmd>TroubleToggle lsp_references<cr>', 'Trouble: LSP References' },
+  },
+}
+
+-- Git keybindings
+wk.register {
+  ['<leader>g'] = {
+    name = ' Git',
+    d = {
+      name = ' Diffview',
+      v = { '<cmd>DiffviewOpen<CR>', 'Open' },
+      x = { '<cmd>DiffviewClose<CR>', 'Close' },
+      h = { '<cmd>DiffviewFileHistory<CR>', 'File History' },
+    },
+  },
+}
+
+-- LSP keybindings
+wk.register {
+  ['<leader>l'] = {
+    name = ' LSP',
+    d = { vim.lsp.buf.definition, 'Go to definition' },
+    h = { vim.lsp.buf.hover, 'Show hover information' },
+  },
+}
+
+-- Toggle keybindings
+wk.register {
+  ['<leader>t'] = {
+    name = '󰙨 Toggle',
+    u = { '<cmd>UndotreeToggle<CR>', 'Undotree' },
+    s = { '<cmd>SymbolsOutline<CR>', 'Symbol Outline' },
+    m = { '<cmd>MinimapToggle<CR>', 'Minimap' },
+  },
+}
+
+-- Avante keybindings
+wk.register {
+  ['<leader>a'] = {
+    name = ' Avante',
+    a = { '<cmd>AvanteToggle<CR>', 'Toggle Sidebar' },
+    r = { '<cmd>AvanteRefresh<CR>', 'Refresh Sidebar' },
+    e = { '<cmd>AvanteEdit<CR>', 'Edit Selected Blocks' },
+  },
+}
+
+-- Conflict resolution keybindings
+wk.register {
+  c = {
+    o = { '<cmd>AvanteConflictChooseOurs<CR>', 'Choose Ours in conflict' },
+    t = { '<cmd>AvanteConflictChooseTheirs<CR>', 'Choose Theirs in conflict' },
+    a = { '<cmd>AvanteConflictChooseAllTheirs<CR>', 'Choose All Theirs in conflicts' },
+    ['0'] = { '<cmd>AvanteConflictChooseNone<CR>', 'Choose None in conflict' },
+    b = { '<cmd>AvanteConflictChooseBoth<CR>', 'Choose Both in conflict' },
+    c = { '<cmd>AvanteConflictChooseCursor<CR>', 'Choose at Cursor in conflict' },
+  },
+  [']x'] = { '<cmd>AvanteConflictNext<CR>', 'Go to Next Conflict' },
+  ['[x'] = { '<cmd>AvanteConflictPrev<CR>', 'Go to Previous Conflict' },
+  [']]'] = { '<cmd>AvanteJumpNext<CR>', 'Jump to Next Codeblock' },
+  ['[['] = { '<cmd>AvanteJumpPrev<CR>', 'Jump to Previous Codeblock' },
+}
+
+-- Window navigation
+wk.register {
+  ['<C-h>'] = { '<C-w>h', 'Move to left window' },
+  ['<C-j>'] = { '<C-w>j', 'Move to window below' },
+  ['<C-k>'] = { '<C-w>k', 'Move to window above' },
+  ['<C-l>'] = { '<C-w>l', 'Move to right window' },
+}
+
+-- Hop keybindings
+local hop = require 'hop'
+local directions = require('hop.hint').HintDirection
+wk.register {
+  f = {
+    function()
+      hop.hint_char1 { direction = directions.AFTER_CURSOR, current_line_only = true }
+    end,
+    'Hop forward to char',
+  },
+  F = {
+    function()
+      hop.hint_char1 { direction = directions.BEFORE_CURSOR, current_line_only = true }
+    end,
+    'Hop backward to char',
+  },
+  t = {
+    function()
+      hop.hint_char1 { direction = directions.AFTER_CURSOR, current_line_only = true }
+    end,
+    'Hop forward to before char',
+  },
+  T = {
+    function()
+      hop.hint_char1 { direction = directions.BEFORE_CURSOR, current_line_only = true }
+    end,
+    'Hop backward to before char',
+  },
+  ['<leader>h'] = {
+    w = { '<cmd>HopWord<cr>', 'Hop to word' },
+  },
+}
+
+-- Smart search
+vim.keymap.set('n', '<C-f>', function()
   local opts = {
     prompt_title = 'Smart Search',
     path_display = { 'smart' },
@@ -1129,99 +1306,17 @@ local function smart_search()
   end
 
   require('telescope.builtin').grep_string(opts)
-end
-
-map('n', '<C-f>', smart_search, { desc = 'Smart search (Ctrl+F)' })
--- fzf-lua keybindings
-map('n', '<leader>fa', function()
-  require('fzf-lua').grep()
-end, { desc = 'Search with Grep (fzf-lua)' })
-map('n', '<leader>fr', function()
-  require('fzf-lua').live_grep()
-end, { desc = 'Search with Live Grep (fzf-lua)' })
--- Formatting keybinding
-map('n', '<leader>fm', vim.lsp.buf.format, { desc = 'Format code' })
--- Project-wide search and replace
-map('n', '<leader>fR', function()
-  require('spectre').open()
-end, { desc = 'Find and Replace (Spectre)' })
-
--- Add SJ keybinding
-vim.keymap.set('n', '<leader>sj', function()
-  require('sj').run()
-end, { desc = 'Search and Jump (SJ)' })
-
--- Undotree toggle
-map('n', '<leader>u', '<cmd>UndotreeToggle<CR>', { desc = 'Toggle Undotree' })
-
--- Symbol outline toggle
-map('n', '<leader>so', '<cmd>SymbolsOutline<CR>', { desc = 'Toggle Symbol Outline' })
-
--- Minimap toggle
-map('n', '<leader>mm', '<cmd>MinimapToggle<CR>', { desc = 'Toggle Minimap' })
-
--- Hop keybindings
-map(
-  'n',
-  'f',
-  "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.AFTER_CURSOR, current_line_only = true })<cr>",
-  { desc = 'Hop forward to char' }
-)
-map(
-  'n',
-  'F',
-  "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.BEFORE_CURSOR, current_line_only = true })<cr>",
-  { desc = 'Hop backward to char' }
-)
-map(
-  'o',
-  'f',
-  "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.AFTER_CURSOR, current_line_only = true, inclusive_jump = true })<cr>",
-  { desc = 'Hop forward to char (operator)' }
-)
-map(
-  'o',
-  'F',
-  "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.BEFORE_CURSOR, current_line_only = true, inclusive_jump = true })<cr>",
-  { desc = 'Hop backward to char (operator)' }
-)
-map(
-  '',
-  't',
-  "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.AFTER_CURSOR, current_line_only = true })<cr>",
-  { desc = 'Hop forward to before char' }
-)
-map(
-  '',
-  'T',
-  "<cmd>lua require'hop'.hint_char1({ direction = require'hop.hint'.HintDirection.BEFORE_CURSOR, current_line_only = true })<cr>",
-  { desc = 'Hop backward to before char' }
-)
-map('n', '<leader>hw', '<cmd>HopWord<cr>', { desc = 'Hop to word' })
+end, { desc = 'Smart search (Ctrl+F)' })
 
 -- Markdown preview toggle (only in markdown files)
 vim.api.nvim_create_autocmd('FileType', {
   pattern = 'markdown',
   callback = function()
-    vim.api.nvim_buf_set_keymap(0, 'n', '<leader>mp', ':MarkdownPreviewToggle<CR>', { noremap = true, silent = true, desc = 'Toggle Markdown Preview' })
+    vim.keymap.set('n', '<leader>mp', ':MarkdownPreviewToggle<CR>', { buffer = true, desc = 'Toggle Markdown Preview' })
   end,
 })
 
--- **Avante.nvim Keybindings**
--- Sidebar toggle
-map('n', '<leader>aa', '<cmd>AvanteToggle<CR>', { desc = 'Avante: Toggle Sidebar' })
-
--- LSP keybindings
-map('n', 'gd', vim.lsp.buf.definition, { desc = 'Go to definition' })
-map('n', 'K', vim.lsp.buf.hover, { desc = 'Show hover information' })
-
--- Window navigation
-map('n', '<C-h>', '<C-w>h', { desc = 'Move to left window' })
-map('n', '<C-j>', '<C-w>j', { desc = 'Move to window below' })
-map('n', '<C-k>', '<C-w>k', { desc = 'Move to window above' })
-map('n', '<C-l>', '<C-w>l', { desc = 'Move to right window' })
-
--- Global focus change
+-- Global focus change function
 function _G.change_focus()
   if vim.fn.winnr '$' > 1 then
     vim.cmd 'wincmd w'
@@ -1231,34 +1326,6 @@ function _G.change_focus()
     vim.cmd 'bnext'
   end
 end
-
-map('n', '<leader><Tab>', '<cmd>lua change_focus()<CR>', { desc = 'Change focus globally' })
-
--- Formatting keybinding
-map('n', '<leader>f', vim.lsp.buf.format, { desc = 'Format code' })
-
--- Undotree toggle
-map('n', '<leader>u', '<cmd>UndotreeToggle<CR>', { desc = 'Toggle Undotree' })
-
--- **Avante.nvim Keybindings**
--- Sidebar toggle
-map('n', '<leader>aa', '<cmd>AvanteToggle<CR>', { desc = 'Avante: Toggle Sidebar' })
--- Refresh sidebar
-map('n', '<leader>ar', '<cmd>AvanteRefresh<CR>', { desc = 'Avante: Refresh Sidebar' })
--- Edit selected blocks
-map('v', '<leader>ae', '<cmd>AvanteEdit<CR>', { desc = 'Avante: Edit Selected Blocks' })
--- Conflict resolution keybindings
-map('n', 'co', '<cmd>AvanteConflictChooseOurs<CR>', { desc = 'Avante: Choose Ours in conflict' })
-map('n', 'ct', '<cmd>AvanteConflictChooseTheirs<CR>', { desc = 'Avante: Choose Theirs in conflict' })
-map('n', 'ca', '<cmd>AvanteConflictChooseAllTheirs<CR>', { desc = 'Avante: Choose All Theirs in conflicts' })
-map('n', 'c0', '<cmd>AvanteConflictChooseNone<CR>', { desc = 'Avante: Choose None in conflict' })
-map('n', 'cb', '<cmd>AvanteConflictChooseBoth<CR>', { desc = 'Avante: Choose Both in conflict' })
-map('n', 'cc', '<cmd>AvanteConflictChooseCursor<CR>', { desc = 'Avante: Choose at Cursor in conflict' })
-map('n', ']x', '<cmd>AvanteConflictNext<CR>', { desc = 'Avante: Go to Next Conflict' })
-map('n', '[x', '<cmd>AvanteConflictPrev<CR>', { desc = 'Avante: Go to Previous Conflict' })
--- Jump between codeblocks
-map('n', ']]', '<cmd>AvanteJumpNext<CR>', { desc = 'Avante: Jump to Next Codeblock' })
-map('n', '[[', '<cmd>AvanteJumpPrev<CR>', { desc = 'Avante: Jump to Previous Codeblock' })
 
 -- Custom autocommands
 local augroup = vim.api.nvim_create_augroup('CustomAutocommands', { clear = true })
