@@ -495,6 +495,11 @@ require('lazy').setup {
       }
     end,
   },
+  -- Treesitter playground for inspecting syntax trees
+  {
+    'nvim-treesitter/playground',
+    dependencies = { 'nvim-treesitter/nvim-treesitter' },
+  },
 
   -- Better code folding
   {
@@ -1562,5 +1567,507 @@ require('tokyonight').setup {
     floats = 'transparent',
   },
 }
+local function trace_causal_chain()
+  local ts_utils = require 'nvim-treesitter.ts_utils'
+  local node = ts_utils.get_node_at_cursor()
+  if not node then
+    return
+  end
+
+  local bufnr = vim.api.nvim_get_current_buf()
+  local filename = vim.api.nvim_buf_get_name(bufnr)
+
+  local function get_node_text(n)
+    return vim.treesitter.get_node_text(n, bufnr)
+  end
+
+  local variable_dependencies = {}
+  local function_calls = {}
+  local causal_chain = {}
+
+  local function add_to_chain(item)
+    table.insert(causal_chain, item)
+  end
+
+  local function trace_variable(var_name, node)
+    if not variable_dependencies[var_name] then
+      variable_dependencies[var_name] = {}
+    end
+    local deps = variable_dependencies[var_name]
+    local parent = node:parent()
+    if parent and parent:type() == 'assignment_expression' then
+      local rhs = parent:child(2)
+      deps[#deps + 1] = {
+        type = 'assignment',
+        node = rhs,
+        text = get_node_text(rhs),
+      }
+    elseif parent and parent:type() == 'variable_declaration' then
+      local init = parent:field('declarator')[1]:field('value')[1]
+      if init then
+        deps[#deps + 1] = {
+          type = 'declaration',
+          node = init,
+          text = get_node_text(init),
+        }
+      end
+    end
+  end
+
+  local function trace_function_call(func_name, node)
+    if not function_calls[func_name] then
+      function_calls[func_name] = {}
+    end
+    local calls = function_calls[func_name]
+    calls[#calls + 1] = {
+      node = node,
+      arguments = {},
+    }
+    for arg in node:iter_children() do
+      if arg:type() == 'argument_list' then
+        for arg_expr in arg:iter_children() do
+          if arg_expr:type() ~= ',' then
+            table.insert(calls[#calls].arguments, {
+              node = arg_expr,
+              text = get_node_text(arg_expr),
+            })
+          end
+        end
+        break
+      end
+    end
+  end
+
+  local function analyze_node(node, depth)
+    local node_type = node:type()
+    local item = {
+      type = node_type,
+      text = get_node_text(node),
+      depth = depth,
+      start = { node:start() },
+      end_ = { node:end_() },
+    }
+
+    if node_type == 'identifier' then
+      trace_variable(item.text, node)
+    elseif node_type == 'call_expression' then
+      local func_name = get_node_text(node:child(0))
+      trace_function_call(func_name, node)
+      item.func_name = func_name
+    elseif node_type == 'function_definition' then
+      item.func_name = get_node_text(node:field('name')[1])
+    elseif node_type == 'if_statement' or node_type == 'for_statement' or node_type == 'while_statement' then
+      item.condition = get_node_text(node:field('condition')[1])
+    elseif node_type == 'return_statement' then
+      item.return_value = get_node_text(node:child(1))
+    end
+
+    add_to_chain(item)
+
+    for child in node:iter_children() do
+      analyze_node(child, depth + 1)
+    end
+  end
+
+  analyze_node(node, 0)
+
+  local function resolve_dependencies()
+    for var, deps in pairs(variable_dependencies) do
+      for _, dep in ipairs(deps) do
+        local resolved = {}
+        for _, item in ipairs(causal_chain) do
+          if item.start[1] == dep.node:start() and item.end_[1] == dep.node:end_() then
+            table.insert(resolved, item)
+          end
+        end
+        dep.resolved = resolved
+      end
+    end
+
+    for func, calls in pairs(function_calls) do
+      for _, call in ipairs(calls) do
+        for _, arg in ipairs(call.arguments) do
+          local resolved = {}
+          for _, item in ipairs(causal_chain) do
+            if item.start[1] == arg.node:start() and item.end_[1] == arg.node:end_() then
+              table.insert(resolved, item)
+            end
+          end
+          arg.resolved = resolved
+        end
+      end
+    end
+  end
+
+  resolve_dependencies()
+
+  local function display_chain()
+    local lines = {}
+    local function add_line(text, level)
+      table.insert(lines, { text = string.rep('  ', level) .. text, level = level })
+    end
+
+    for i, item in ipairs(causal_chain) do
+      local line = string.format('%d. %s: %s', i, item.type, item.text)
+      add_line(line, item.depth)
+
+      if item.type == 'identifier' then
+        local deps = variable_dependencies[item.text]
+        if deps and #deps > 0 then
+          add_line('Dependencies:', item.depth + 1)
+          for _, dep in ipairs(deps) do
+            add_line(string.format('%s: %s', dep.type, dep.text), item.depth + 2)
+          end
+        end
+      elseif item.type == 'call_expression' then
+        local calls = function_calls[item.func_name]
+        if calls and #calls > 0 then
+          add_line('Arguments:', item.depth + 1)
+          for _, arg in ipairs(calls[#calls].arguments) do
+            add_line(arg.text, item.depth + 2)
+          end
+        end
+      end
+    end
+
+    local function show_details(index)
+      local item = causal_chain[index]
+      local details =
+        string.format('File: %s\nLine: %d\nColumn: %d\nType: %s\nText: %s\n', filename, item.start[1] + 1, item.start[2] + 1, item.type, item.text)
+
+      if item.type == 'identifier' then
+        local deps = variable_dependencies[item.text]
+        if deps and #deps > 0 then
+          details = details .. 'Dependencies:\n'
+          for _, dep in ipairs(deps) do
+            details = details .. string.format('  %s: %s\n', dep.type, dep.text)
+          end
+        end
+      elseif item.type == 'call_expression' then
+        local calls = function_calls[item.func_name]
+        if calls and #calls > 0 then
+          details = details .. 'Arguments:\n'
+          for _, arg in ipairs(calls[#calls].arguments) do
+            details = details .. string.format('  %s\n', arg.text)
+          end
+        end
+      end
+
+      vim.api.nvim_echo({ { details, 'Normal' } }, false, {})
+    end
+
+    vim.ui.select(lines, {
+      prompt = 'Causal Chain (Select an item for details):',
+      format_item = function(item)
+        return item.text
+      end,
+    }, function(choice, idx)
+      if choice then
+        local index = tonumber(choice.text:match '^(%d+)%.')
+        if index then
+          local item = causal_chain[index]
+          vim.api.nvim_win_set_cursor(0, { item.start[1] + 1, item.start[2] })
+          show_details(index)
+        end
+      end
+    end)
+  end
+
+  display_chain()
+end
+
+-- Keybinding for tracing causal chain
+vim.keymap.set('n', '<leader>tc', trace_causal_chain, { desc = 'Trace causal chain' })
+
+-- Helper function to trace causal chain for a specific node
+local function trace_causal_chain_for_node(node)
+  if not node then
+    print 'Error: Received nil node in trace_causal_chain_for_node'
+    return {}
+  end
+
+  local bufnr = vim.api.nvim_get_current_buf()
+  local filename = vim.api.nvim_buf_get_name(bufnr)
+
+  local function get_node_text(n)
+    if not n then
+      return ''
+    end
+    local ok, text = pcall(vim.treesitter.get_node_text, n, bufnr)
+    if not ok then
+      print('Error getting node text: ' .. text)
+      return ''
+    end
+    return text
+  end
+
+  local variable_dependencies = {}
+  local function_calls = {}
+  local causal_chain = {}
+
+  local function add_to_chain(item)
+    table.insert(causal_chain, item)
+  end
+
+  local function trace_variable(var_name, node)
+    if not variable_dependencies[var_name] then
+      variable_dependencies[var_name] = {}
+    end
+    local deps = variable_dependencies[var_name]
+    local parent = node:parent()
+    if parent and parent:type() == 'assignment_expression' then
+      local rhs = parent:child(2)
+      if rhs then
+        deps[#deps + 1] = {
+          type = 'assignment',
+          node = rhs,
+          text = get_node_text(rhs),
+        }
+      end
+    elseif parent and parent:type() == 'variable_declaration' then
+      local declarator = parent:field('declarator')[1]
+      if declarator then
+        local init = declarator:field('value')[1]
+        if init then
+          deps[#deps + 1] = {
+            type = 'declaration',
+            node = init,
+            text = get_node_text(init),
+          }
+        end
+      end
+    end
+  end
+
+  local function trace_function_call(func_name, node)
+    if not function_calls[func_name] then
+      function_calls[func_name] = {}
+    end
+    local calls = function_calls[func_name]
+    calls[#calls + 1] = {
+      node = node,
+      arguments = {},
+    }
+    for arg in node:iter_children() do
+      if arg:type() == 'argument_list' then
+        for arg_expr in arg:iter_children() do
+          if arg_expr:type() ~= ',' then
+            table.insert(calls[#calls].arguments, {
+              node = arg_expr,
+              text = get_node_text(arg_expr),
+            })
+          end
+        end
+        break
+      end
+    end
+  end
+
+  local function analyze_node(node, depth)
+    if not node then
+      return
+    end
+
+    local ok, result = pcall(function()
+      local node_type = node:type()
+      local item = {
+        type = node_type,
+        text = get_node_text(node),
+        depth = depth,
+        start = { node:start() },
+        end_ = { node:end_() },
+      }
+
+      if node_type == 'identifier' then
+        trace_variable(item.text, node)
+      elseif node_type == 'call_expression' then
+        local func_node = node:child(0)
+        if func_node then
+          local func_name = get_node_text(func_node)
+          trace_function_call(func_name, node)
+          item.func_name = func_name
+        end
+      elseif node_type == 'function_definition' then
+        local name_field = node:field 'name'
+        if name_field and name_field[1] then
+          item.func_name = get_node_text(name_field[1])
+        end
+      elseif node_type == 'if_statement' or node_type == 'for_statement' or node_type == 'while_statement' then
+        local condition_field = node:field 'condition'
+        if condition_field and condition_field[1] then
+          item.condition = get_node_text(condition_field[1])
+        end
+      elseif node_type == 'return_statement' then
+        local return_value = node:child(1)
+        if return_value then
+          item.return_value = get_node_text(return_value)
+        end
+      end
+
+      add_to_chain(item)
+
+      for child in node:iter_children() do
+        analyze_node(child, depth + 1)
+      end
+    end)
+
+    if not ok then
+      print('Error analyzing node: ' .. result)
+    end
+  end
+
+  analyze_node(node, 0)
+
+  local function resolve_dependencies()
+    for var, deps in pairs(variable_dependencies) do
+      for _, dep in ipairs(deps) do
+        local resolved = {}
+        for _, item in ipairs(causal_chain) do
+          if item.start[1] == dep.node:start() and item.end_[1] == dep.node:end_() then
+            table.insert(resolved, item)
+          end
+        end
+        dep.resolved = resolved
+      end
+    end
+
+    for func, calls in pairs(function_calls) do
+      for _, call in ipairs(calls) do
+        for _, arg in ipairs(call.arguments) do
+          local resolved = {}
+          for _, item in ipairs(causal_chain) do
+            if item.start[1] == arg.node:start() and item.end_[1] == arg.node:end_() then
+              table.insert(resolved, item)
+            end
+          end
+          arg.resolved = resolved
+        end
+      end
+    end
+  end
+
+  resolve_dependencies()
+
+  return causal_chain
+end
+
+-- Function to analyze causal chains and identify user flows
+local function analyze_user_flows()
+  local parsers = require 'nvim-treesitter.parsers'
+  local bufnr = vim.api.nvim_get_current_buf()
+  local root = parsers.get_parser(bufnr):parse()[1]:root()
+
+  local all_chains = {}
+  local user_flows = {}
+
+  local function analyze_node(node)
+    local start_row, _, end_row, _ = node:range()
+    local chain = trace_causal_chain_for_node(node)
+    if #chain > 0 then
+      table.insert(all_chains, {
+        range = { start_row + 1, end_row + 1 },
+        chain = chain,
+      })
+    end
+
+    for child in node:iter_children() do
+      analyze_node(child)
+    end
+  end
+
+  analyze_node(root)
+
+  -- Identify user flows from causal chains
+  for _, chain in ipairs(all_chains) do
+    local flow = {
+      entry_point = nil,
+      user_interactions = {},
+      data_flow = {},
+      exit_points = {},
+    }
+
+    for _, item in ipairs(chain.chain) do
+      if item.type == 'function_definition' and (item.text:match 'handle' or item.text:match 'route') then
+        flow.entry_point = item.text
+      elseif item.type == 'call_expression' and (item.text:match 'input' or item.text:match 'get' or item.text:match 'post') then
+        table.insert(flow.user_interactions, item.text)
+      elseif item.type == 'assignment_expression' or item.type == 'variable_declaration' then
+        table.insert(flow.data_flow, item.text)
+      elseif item.type == 'return_statement' or item.text:match 'render' or item.text:match 'redirect' then
+        table.insert(flow.exit_points, item.text)
+      end
+    end
+
+    if flow.entry_point then
+      table.insert(user_flows, flow)
+    end
+  end
+
+  -- Display user flows
+  if #user_flows == 0 then
+    print 'No user flows identified in the current buffer.'
+    return
+  end
+
+  local lines = {}
+  for i, flow in ipairs(user_flows) do
+    table.insert(lines, string.format('User Flow %d:', i))
+    table.insert(lines, string.format('  Entry Point: %s', flow.entry_point))
+    table.insert(lines, '  User Interactions:')
+    for _, interaction in ipairs(flow.user_interactions) do
+      table.insert(lines, string.format('    - %s', interaction))
+    end
+    table.insert(lines, '  Data Flow:')
+    for _, data in ipairs(flow.data_flow) do
+      table.insert(lines, string.format('    - %s', data))
+    end
+    table.insert(lines, '  Exit Points:')
+    for _, exit in ipairs(flow.exit_points) do
+      table.insert(lines, string.format('    - %s', exit))
+    end
+    table.insert(lines, '')
+  end
+
+  vim.ui.select(lines, {
+    prompt = 'Identified User Flows:',
+    format_item = function(item)
+      return item
+    end,
+  }, function(choice)
+    if choice then
+      local flow_num = tonumber(choice:match 'User Flow (%d+):')
+      if flow_num then
+        local selected_flow = user_flows[flow_num]
+        local details = {
+          string.format('User Flow %d Details:', flow_num),
+          string.format('Entry Point: %s', selected_flow.entry_point),
+          'User Interactions:',
+        }
+        for _, interaction in ipairs(selected_flow.user_interactions) do
+          table.insert(details, string.format('  - %s', interaction))
+        end
+        table.insert(details, 'Data Flow:')
+        for _, data in ipairs(selected_flow.data_flow) do
+          table.insert(details, string.format('  - %s', data))
+        end
+        table.insert(details, 'Exit Points:')
+        for _, exit in ipairs(selected_flow.exit_points) do
+          table.insert(details, string.format('  - %s', exit))
+        end
+
+        vim.api.nvim_echo(
+          vim.tbl_map(function(line)
+            return { line, 'Normal' }
+          end, details),
+          false,
+          {}
+        )
+      end
+    end
+  end)
+end
+
+-- Keybinding for analyzing user flows
+vim.keymap.set('n', '<leader>tu', analyze_user_flows, { desc = 'Analyze user flows' })
 
 print 'Neovim configuration loaded successfully!'
