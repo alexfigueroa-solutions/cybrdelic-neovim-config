@@ -491,6 +491,15 @@ require('lazy').setup {
     dependencies = { 'nvim-treesitter/nvim-treesitter' },
   },
 
+  -- Hop (Easy motion)
+  {
+    'phaazon/hop.nvim',
+    branch = 'v2', -- optional but strongly recommended
+    config = function()
+      require('hop').setup()
+    end
+  },
+
   -- Better code folding
   {
     'kevinhwang91/nvim-ufo',
@@ -735,7 +744,7 @@ require('lazy').setup {
             name = 'Oxocarbon',
             colorscheme = 'oxocarbon',
           },
-          {
+                   {
             name = 'Gruvbox',
             colorscheme = 'gruvbox',
           },
@@ -801,6 +810,31 @@ require('lazy').setup {
     end,
   },
 
+  -- Transparent background
+  {
+    'xiyaowong/transparent.nvim',
+    lazy = false,
+    config = function()
+      require("transparent").setup({
+        extra_groups = {
+          "NormalFloat",
+          "NvimTreeNormal",
+          "NeoTreeNormal",
+        },
+        exclude_groups = {},
+      })
+
+      -- Clear specific plugin prefixes
+      require('transparent').clear_prefix('BufferLine')
+      require('transparent').clear_prefix('lualine')
+
+      -- Add additional groups if needed
+      -- vim.g.transparent_groups = vim.list_extend(
+      --   vim.g.transparent_groups or {},
+      --   { "YourAdditionalGroup1", "YourAdditionalGroup2" }
+      -- )
+    end,
+  },
   -- Markdown preview
   {
     'iamcco/markdown-preview.nvim',
@@ -1259,37 +1293,38 @@ wk.register {
 }
 
 -- Hop keybindings
-local hop = require 'hop'
-local directions = require('hop.hint').HintDirection
-wk.register {
-  f = {
-    function()
-      hop.hint_char1 { direction = directions.AFTER_CURSOR, current_line_only = true }
-    end,
-    'Hop forward to char',
-  },
-  F = {
-    function()
-      hop.hint_char1 { direction = directions.BEFORE_CURSOR, current_line_only = true }
-    end,
-    'Hop backward to char',
-  },
-  t = {
-    function()
-      hop.hint_char1 { direction = directions.AFTER_CURSOR, current_line_only = true }
-    end,
-    'Hop forward to before char',
-  },
-  T = {
-    function()
-      hop.hint_char1 { direction = directions.BEFORE_CURSOR, current_line_only = true }
-    end,
-    'Hop backward to before char',
-  },
-  ['<leader>h'] = {
-    w = { '<cmd>HopWord<cr>', 'Hop to word' },
-  },
-}
+-- Commented out until the plugin is properly installed
+-- local hop = require 'hop'
+-- local directions = require('hop.hint').HintDirection
+-- wk.register {
+--   f = {
+--     function()
+--       hop.hint_char1 { direction = directions.AFTER_CURSOR, current_line_only = true }
+--     end,
+--     'Hop forward to char',
+--   },
+--   F = {
+--     function()
+--       hop.hint_char1 { direction = directions.BEFORE_CURSOR, current_line_only = true }
+--     end,
+--     'Hop backward to char',
+--   },
+--   t = {
+--     function()
+--       hop.hint_char1 { direction = directions.AFTER_CURSOR, current_line_only = true }
+--     end,
+--     'Hop forward to before char',
+--   },
+--   T = {
+--     function()
+--       hop.hint_char1 { direction = directions.BEFORE_CURSOR, current_line_only = true }
+--     end,
+--     'Hop backward to before char',
+--   },
+--   ['<leader>h'] = {
+--     w = { '<cmd>HopWord<cr>', 'Hop to word' },
+--   },
+-- }
 
 -- Smart search
 vim.keymap.set('n', '<C-f>', function()
@@ -1448,17 +1483,42 @@ cmp.setup {
 local cmp_autopairs = require 'nvim-autopairs.completion.cmp'
 cmp.event:on('confirm_done', cmp_autopairs.on_confirm_done())
 
+-- Function to set transparency
+local function set_transparency()
+  local groups = {
+    'Normal', 'NormalFloat', 'NormalNC', 'SignColumn', 'EndOfBuffer',
+    'LineNr', 'CursorLineNr', 'VertSplit', 'Folded', 'NonText',
+    'SpecialKey', 'Pmenu', 'PmenuSbar', 'PmenuThumb'
+  }
+  for _, group in ipairs(groups) do
+    vim.api.nvim_set_hl(0, group, { bg = 'NONE', ctermbg = 'NONE' })
+  end
+
+  -- Additional transparency settings
+  vim.opt.pumblend = 10
+  vim.opt.winblend = 10
+
+  -- Force transparency for specific colorschemes that might override it
+  vim.cmd([[
+    hi Normal guibg=NONE ctermbg=NONE
+    hi NormalNC guibg=NONE ctermbg=NONE
+    hi EndOfBuffer guibg=NONE ctermbg=NONE
+    hi SignColumn guibg=NONE ctermbg=NONE
+  ]])
+end
+
 -- ColorScheme adjustments for transparency
 vim.api.nvim_create_autocmd('ColorScheme', {
   pattern = '*',
   callback = function()
-    vim.api.nvim_set_hl(0, 'Normal', { bg = 'NONE' })
-    vim.api.nvim_set_hl(0, 'NormalFloat', { bg = 'NONE' })
-    vim.api.nvim_set_hl(0, 'NormalNC', { bg = 'NONE' })
-    vim.api.nvim_set_hl(0, 'SignColumn', { bg = 'NONE' })
-    vim.api.nvim_set_hl(0, 'EndOfBuffer', { bg = 'NONE' })
+    vim.schedule(function()
+      set_transparency()
+    end)
   end,
 })
+
+-- Set transparency immediately
+set_transparency()
 
 -- Autoformat on save
 vim.api.nvim_create_autocmd('BufWritePre', {
@@ -1614,6 +1674,9 @@ vim.keymap.set('n', '<leader><leader>', function()
   require('telescope').extensions.smart_open.smart_open()
 end, { noremap = true, silent = true, desc = 'Smart Open (Telescope)' })
 
+-- Keybinding for toggling transparency
+vim.keymap.set('n', '<leader>tt', ':TransparentToggle<CR>', { noremap = true, silent = true, desc = 'Toggle transparency' })
+
 -- Set initial colorscheme
 vim.cmd.colorscheme 'tokyonight-night'
 require('tokyonight').setup {
@@ -1623,7 +1686,20 @@ require('tokyonight').setup {
     sidebars = 'transparent',
     floats = 'transparent',
   },
+  on_colors = function(colors)
+    colors.bg = "NONE"
+    colors.bg_dark = "NONE"
+    colors.bg_float = "NONE"
+    colors.bg_highlight = "NONE"
+    colors.bg_popup = "NONE"
+    colors.bg_sidebar = "NONE"
+    colors.bg_statusline = "NONE"
+  end,
 }
+-- Ensure transparency is set after colorscheme
+vim.schedule(function()
+  set_transparency()
+end)
 local function trace_causal_chain()
   local ts_utils = require 'nvim-treesitter.ts_utils'
   local node = ts_utils.get_node_at_cursor()
