@@ -251,6 +251,120 @@ require('lazy').setup {
     lazy = false,
     priority = 1000,
   },
+  {
+    'ellisonleao/gruvbox.nvim',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'shaunsingh/nord.nvim',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'catppuccin/nvim',
+    name = 'catppuccin',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'navarasu/onedark.nvim',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'rebelot/kanagawa.nvim',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'EdenEast/nightfox.nvim',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'sainnhe/everforest',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'sainnhe/sonokai',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'navarasu/onedark.nvim',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'folke/lsp-colors.nvim',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'rebelot/kanagawa.nvim',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'EdenEast/nightfox.nvim',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'sainnhe/everforest',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'sainnhe/sonokai',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'sainnhe/edge',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'projekt0n/github-nvim-theme',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'marko-cerovac/material.nvim',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'Mofiqul/dracula.nvim',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'rose-pine/neovim',
+    name = 'rose-pine',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'folke/tokyonight.nvim',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'bluz71/vim-moonfly-colors',
+    name = 'moonfly',
+    lazy = false,
+    priority = 1000,
+  },
+  {
+    'bluz71/vim-nightfly-colors',
+    name = 'nightfly',
+    lazy = false,
+    priority = 1000,
+  },
 
   -- Status line
   {
@@ -444,12 +558,8 @@ require('lazy').setup {
   -- Indent guides
   {
     'lukas-reineke/indent-blankline.nvim',
-    config = function()
-      require('indent_blankline').setup {
-        show_current_context = true,
-        show_current_context_start = true,
-      }
-    end,
+    main = 'ibl',
+    opts = {},
   },
 
   -- Multi-cursor editing
@@ -511,7 +621,6 @@ require('lazy').setup {
         keymaps = {
           view = {
             ['<leader>dq'] = actions.close, -- Close the diffview
-            ['<leader>dr'] = actions.revert_buf, -- Revert changes in the current buffer
           },
           file_panel = {
             ['<leader>dr'] = actions.restore_entry, -- Restore entry in the file panel
@@ -615,8 +724,67 @@ require('lazy').setup {
             name = 'Oxocarbon',
             colorscheme = 'oxocarbon',
           },
+          {
+            name = 'Gruvbox',
+            colorscheme = 'gruvbox',
+          },
+          {
+            name = 'Nord',
+            colorscheme = 'nord',
+          },
+          {
+            name = 'Catppuccin',
+            colorscheme = 'catppuccin',
+          },
+          {
+            name = 'OneDark',
+            colorscheme = 'onedark',
+          },
+          {
+            name = 'Kanagawa',
+            colorscheme = 'kanagawa',
+          },
+          {
+            name = 'Nightfox',
+            colorscheme = 'nightfox',
+          },
+          {
+            name = 'Everforest',
+            colorscheme = 'everforest',
+          },
+          {
+            name = 'Sonokai',
+            colorscheme = 'sonokai',
+          },
+          {
+            name = 'Edge',
+            colorscheme = 'edge',
+          },
+          {
+            name = 'Github',
+            colorscheme = 'github',
+          },
+          {
+            name = 'Material',
+            colorscheme = 'material',
+          },
+          {
+            name = 'Dracula',
+            colorscheme = 'dracula',
+          },
+          {
+            name = 'RosePine',
+            colorscheme = 'rose-pine',
+          },
+          {
+            name = 'Moonfly',
+            colorscheme = 'moonfly',
+          },
+          {
+            name = 'Nightfly',
+            'nightfly',
+          },
         },
-        themeConfigFile = vim.fn.stdpath 'config' .. '/lua/theme.lua',
         livePreview = true,
       }
     end,
@@ -1230,12 +1398,35 @@ load_anthropic_api_key()
 require('avante_lib').load()
 
 -- Theme switcher function
+local themes = {
+  'tokyonight-night',
+  'oxocarbon',
+  'gruvbox',
+  'nord',
+  'catppuccin',
+  'onedark',
+  'kanagawa',
+  'nightfox',
+  'everforest',
+  'sonokai',
+  'edge',
+  'github_dark',
+  'material',
+  'dracula',
+  'rose-pine',
+  'tokyonight-storm',
+  'moonfly',
+  'nightfly',
+}
+local current_theme_index = 1
+
 local function toggle_theme()
-  if vim.g.colors_name == 'tokyonight-night' then
-    vim.cmd.colorscheme 'oxocarbon'
-    vim.o.background = 'dark'
-  else
-    vim.cmd.colorscheme 'tokyonight-night'
+  current_theme_index = (current_theme_index % #themes) + 1
+  local new_theme = themes[current_theme_index]
+  vim.cmd.colorscheme(new_theme)
+  vim.o.background = 'dark'
+
+  if new_theme == 'tokyonight-night' then
     require('tokyonight').setup {
       style = 'night',
       transparent = true,
@@ -1244,7 +1435,75 @@ local function toggle_theme()
         floats = 'transparent',
       },
     }
+  elseif new_theme == 'oxocarbon' then
+    -- Oxocarbon doesn't have a setup function, so we just set the colorscheme
+  elseif new_theme == 'gruvbox' then
+    require('gruvbox').setup {
+      transparent_mode = true,
+    }
+  elseif new_theme == 'nord' then
+    -- Nord doesn't have a setup function, so we just set the colorscheme
+  elseif new_theme == 'catppuccin' then
+    require('catppuccin').setup {
+      transparent_background = true,
+    }
+  elseif new_theme == 'onedark' then
+    require('onedark').setup {
+      style = 'dark',
+      transparent = true,
+    }
+  elseif new_theme == 'kanagawa' then
+    require('kanagawa').setup {
+      transparent = true,
+    }
+  elseif new_theme == 'nightfox' then
+    require('nightfox').setup {
+      transparent = true,
+    }
+  elseif new_theme == 'everforest' then
+    vim.g.everforest_transparent_background = 1
+  elseif new_theme == 'sonokai' then
+    vim.g.sonokai_transparent_background = 1
+  elseif new_theme == 'edge' then
+    vim.g.edge_transparent_background = 1
+  elseif new_theme == 'github_dark' then
+    require('github-theme').setup {
+      transparent = true,
+    }
+  elseif new_theme == 'material' then
+    require('material').setup {
+      contrast = {
+        terminal = false,
+        sidebars = false,
+        floating_windows = false,
+        cursor_line = false,
+        non_current_windows = false,
+        filetypes = {},
+      },
+    }
+    vim.g.material_style = 'deep ocean'
+  elseif new_theme == 'dracula' then
+    require('dracula').setup {
+      transparent_bg = true,
+    }
+  elseif new_theme == 'rose-pine' then
+    require('rose-pine').setup {
+      disable_background = true,
+    }
+  elseif new_theme == 'tokyonight-storm' then
+    require('tokyonight').setup {
+      style = 'storm',
+      transparent = true,
+    }
+  elseif new_theme == 'moonfly' then
+    vim.g.moonflyCursorColor = true
+    vim.g.moonflyTransparent = true
+  elseif new_theme == 'nightfly' then
+    vim.g.nightflyCursorColor = true
+    vim.g.nightflyTransparent = true
   end
+
+  print('Switched to ' .. new_theme .. ' theme')
 end
 
 -- Keybinding for theme switching
