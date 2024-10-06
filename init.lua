@@ -429,10 +429,26 @@ require('lazy').setup {
   {
     'nvim-telescope/telescope.nvim',
     branch = '0.1.x',
-    dependencies = { 'nvim-lua/plenary.nvim' },
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'BurntSushi/ripgrep',
+    },
     config = function()
       local telescope = require 'telescope'
       telescope.setup {
+        defaults = {
+          vimgrep_arguments = {
+            'rg',
+            '--color=never',
+            '--no-heading',
+            '--with-filename',
+            '--line-number',
+            '--column',
+            '--smart-case',
+            '--hidden',
+          },
+          file_ignore_patterns = { 'node_modules', '.git' },
+        },
         extensions = {
           fzf = {
             fuzzy = true,
@@ -1102,6 +1118,25 @@ map('n', '<leader>fs', builtin.grep_string, { desc = 'Search for word under curs
 map('n', '<leader>fc', builtin.current_buffer_fuzzy_find, { desc = 'Fuzzy search in current buffer' })
 map('n', '<leader>fp', builtin.git_files, { desc = 'Search Git files' })
 map('n', '<leader>fo', builtin.oldfiles, { desc = 'Search recently opened files' })
+
+-- Enhanced Ctrl+F search
+local function smart_search()
+  local opts = {
+    prompt_title = 'Smart Search',
+    path_display = { 'smart' },
+    word_match = '-w',
+    only_sort_text = true,
+    search = '',
+  }
+
+  if vim.fn.expand '%:p' ~= '' then
+    opts.cwd = vim.fn.expand '%:p:h'
+  end
+
+  require('telescope.builtin').grep_string(opts)
+end
+
+map('n', '<C-f>', smart_search, { desc = 'Smart search (Ctrl+F)' })
 -- fzf-lua keybindings
 map('n', '<leader>fa', function()
   require('fzf-lua').grep()
