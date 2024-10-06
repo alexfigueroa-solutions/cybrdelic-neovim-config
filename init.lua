@@ -2,6 +2,40 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 vim.g.have_nerd_font = true
 
+-- Function to open or create a notes file
+function open_notes()
+  local notes_dir = vim.fn.expand '~/notes'
+  if vim.fn.isdirectory(notes_dir) == 0 then
+    vim.fn.mkdir(notes_dir, 'p')
+  end
+
+  vim.ui.select({ 'Search existing notes', 'Create new note' }, {
+    prompt = 'Choose an action:',
+  }, function(choice)
+    if choice == 'Search existing notes' then
+      require('telescope.builtin').find_files {
+        prompt_title = '< Notes >',
+        cwd = notes_dir,
+        find_command = { 'rg', '--files', '--hidden', '--glob', '!.git/*' },
+      }
+    elseif choice == 'Create new note' then
+      create_new_note(notes_dir)
+    end
+  end)
+end
+
+-- Function to create a new note
+function create_new_note(notes_dir)
+  vim.ui.input({ prompt = 'Enter note name (without extension): ' }, function(input)
+    if input then
+      local filename = input .. '.md'
+      local file_path = notes_dir .. '/' .. filename
+      vim.cmd('edit ' .. file_path)
+      print('Created new note: ' .. filename)
+    end
+  end)
+end
+
 -- Basic settings
 vim.opt.number = true
 vim.opt.relativenumber = true
@@ -497,7 +531,7 @@ require('lazy').setup {
     branch = 'v2', -- optional but strongly recommended
     config = function()
       require('hop').setup()
-    end
+    end,
   },
 
   -- Better code folding
@@ -744,7 +778,7 @@ require('lazy').setup {
             name = 'Oxocarbon',
             colorscheme = 'oxocarbon',
           },
-                   {
+          {
             name = 'Gruvbox',
             colorscheme = 'gruvbox',
           },
@@ -815,18 +849,18 @@ require('lazy').setup {
     'xiyaowong/transparent.nvim',
     lazy = false,
     config = function()
-      require("transparent").setup({
+      require('transparent').setup {
         extra_groups = {
-          "NormalFloat",
-          "NvimTreeNormal",
-          "NeoTreeNormal",
+          'NormalFloat',
+          'NvimTreeNormal',
+          'NeoTreeNormal',
         },
         exclude_groups = {},
-      })
+      }
 
       -- Clear specific plugin prefixes
-      require('transparent').clear_prefix('BufferLine')
-      require('transparent').clear_prefix('lualine')
+      require('transparent').clear_prefix 'BufferLine'
+      require('transparent').clear_prefix 'lualine'
 
       -- Add additional groups if needed
       -- vim.g.transparent_groups = vim.list_extend(
@@ -1113,19 +1147,20 @@ wk.register {
     d = { name = ' Debug' },
     h = { name = ' Git Hunks' },
     m = { name = ' Markdown' },
+    n = { name = ' Notes', o = { open_notes, 'Open or Create Notes' } },
     ['<leader>'] = { name = ' Smart Open' },
   },
 }
 
 -- Register individual keybindings
-wk.register({
+wk.register {
   ['<leader>th'] = { ':Themery<CR>', 'Open Themery theme selector' },
   ['<leader>ts'] = { 'Toggle color scheme' },
   ['<leader>tc'] = { 'Copy user flows to clipboard' },
   ['<leader>tu'] = { 'Analyze user flows' },
   ['<leader>mp'] = { ':MarkdownPreviewToggle<CR>', 'Toggle Markdown Preview' },
   ['<leader><leader>'] = { 'Smart Open (Telescope)' },
-})
+}
 
 -- File explorer keybinding
 map('n', '<leader>e', '<cmd>Neotree toggle<CR>', { desc = 'Toggle file explorer' })
@@ -1174,6 +1209,15 @@ wk.register {
     ['<Tab>'] = { '<cmd>lua change_focus()<CR>', 'Change focus globally' },
     u = { '<cmd>UndotreeToggle<CR>', 'Toggle Undotree' },
     f = { vim.lsp.buf.format, 'Format code' },
+    t = {
+      name = '󰙨 Toggle',
+      n = {
+        function()
+          open_notes()
+        end,
+        'Toggle Notes',
+      },
+    },
   },
 }
 
@@ -1244,8 +1288,19 @@ wk.register {
   ['<leader>l'] = {
     name = ' LSP',
     d = { vim.lsp.buf.definition, 'Go to definition' },
+    D = { vim.lsp.buf.declaration, 'Go to declaration' },
     h = { vim.lsp.buf.hover, 'Show hover information' },
+    i = { vim.lsp.buf.implementation, 'Go to implementation' },
+    r = { vim.lsp.buf.references, 'Find references' },
+    s = { vim.lsp.buf.signature_help, 'Show signature help' },
+    n = { vim.lsp.buf.rename, 'Rename symbol' },
+    a = { vim.lsp.buf.code_action, 'Code action' },
+    f = { vim.lsp.buf.formatting, 'Format code' },
+    e = { vim.diagnostic.open_float, 'Show line diagnostics' },
+    q = { vim.diagnostic.setloclist, 'Set location list' },
   },
+  ['[d'] = { vim.diagnostic.goto_prev, 'Previous diagnostic' },
+  [']d'] = { vim.diagnostic.goto_next, 'Next diagnostic' },
 }
 
 -- Toggle keybindings
@@ -1380,9 +1435,58 @@ require('mason-lspconfig').setup()
 local lspconfig = require 'lspconfig'
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
 
+-- Enhanced on_attach function for LSP
+local on_attach = function(client, bufnr)
+  local function buf_set_keymap(...)
+    vim.api.nvim_buf_set_keymap(bufnr, ...)
+  end
+  local opts = { noremap = true, silent = true }
+
+  -- LSP keybindings
+  buf_set_keymap('n', 'gD', '<cmd>lua vim.lsp.buf.declaration()<CR>', opts)
+  buf_set_keymap('n', 'gd', '<cmd>lua vim.lsp.buf.definition()<CR>', opts)
+  buf_set_keymap('n', 'K', '<cmd>lua vim.lsp.buf.hover()<CR>', opts)
+  buf_set_keymap('n', 'gi', '<cmd>lua vim.lsp.buf.implementation()<CR>', opts)
+  buf_set_keymap('n', '<C-k>', '<cmd>lua vim.lsp.buf.signature_help()<CR>', opts)
+  buf_set_keymap('n', '<space>wa', '<cmd>lua vim.lsp.buf.add_workspace_folder()<CR>', opts)
+  buf_set_keymap('n', '<space>wr', '<cmd>lua vim.lsp.buf.remove_workspace_folder()<CR>', opts)
+  buf_set_keymap('n', '<space>wl', '<cmd>lua print(vim.inspect(vim.lsp.buf.list_workspace_folders()))<CR>', opts)
+  buf_set_keymap('n', '<space>D', '<cmd>lua vim.lsp.buf.type_definition()<CR>', opts)
+  buf_set_keymap('n', '<space>rn', '<cmd>lua vim.lsp.buf.rename()<CR>', opts)
+  buf_set_keymap('n', '<space>ca', '<cmd>lua vim.lsp.buf.code_action()<CR>', opts)
+  buf_set_keymap('n', 'gr', '<cmd>lua vim.lsp.buf.references()<CR>', opts)
+  buf_set_keymap('n', '<space>e', '<cmd>lua vim.diagnostic.open_float()<CR>', opts)
+  buf_set_keymap('n', '[d', '<cmd>lua vim.diagnostic.goto_prev()<CR>', opts)
+  buf_set_keymap('n', ']d', '<cmd>lua vim.diagnostic.goto_next()<CR>', opts)
+  buf_set_keymap('n', '<space>q', '<cmd>lua vim.diagnostic.setloclist()<CR>', opts)
+
+  -- Set some keybinds conditional on server capabilities
+  if client.server_capabilities.documentFormattingProvider then
+    buf_set_keymap('n', '<space>f', '<cmd>lua vim.lsp.buf.formatting()<CR>', opts)
+  end
+
+  -- Set autocommands conditional on server_capabilities
+  if client.server_capabilities.documentHighlightProvider then
+    vim.api.nvim_exec(
+      [[
+      hi LspReferenceRead cterm=bold ctermbg=red guibg=LightYellow
+      hi LspReferenceText cterm=bold ctermbg=red guibg=LightYellow
+      hi LspReferenceWrite cterm=bold ctermbg=red guibg=LightYellow
+      augroup lsp_document_highlight
+        autocmd! * <buffer>
+        autocmd CursorHold <buffer> lua vim.lsp.buf.document_highlight()
+        autocmd CursorMoved <buffer> lua vim.lsp.buf.clear_references()
+      augroup END
+    ]],
+      false
+    )
+  end
+end
+
 -- Lua LSP
 lspconfig.lua_ls.setup {
   capabilities = capabilities,
+  on_attach = on_attach,
   settings = {
     Lua = {
       format = {
@@ -1398,6 +1502,7 @@ lspconfig.lua_ls.setup {
 -- Rust Analyzer
 lspconfig.rust_analyzer.setup {
   capabilities = capabilities,
+  on_attach = on_attach,
   settings = {
     ['rust-analyzer'] = {
       cargo = {
@@ -1413,6 +1518,7 @@ lspconfig.rust_analyzer.setup {
 -- Pyright (Python LSP)
 lspconfig.pyright.setup {
   capabilities = capabilities,
+  on_attach = on_attach,
   cmd = { 'pyright-langserver', '--stdio' },
   settings = {
     python = {
@@ -1424,6 +1530,31 @@ lspconfig.pyright.setup {
     },
   },
 }
+
+-- Configure LSP hover and signature help
+vim.lsp.handlers['textDocument/hover'] = vim.lsp.with(vim.lsp.handlers.hover, {
+  border = 'rounded',
+})
+
+vim.lsp.handlers['textDocument/signatureHelp'] = vim.lsp.with(vim.lsp.handlers.signature_help, {
+  border = 'rounded',
+})
+
+-- Diagnostic configuration
+vim.diagnostic.config {
+  virtual_text = true,
+  signs = true,
+  underline = true,
+  update_in_insert = false,
+  severity_sort = false,
+}
+
+-- Add icons to the sign column
+local signs = { Error = ' ', Warn = ' ', Hint = ' ', Info = ' ' }
+for type, icon in pairs(signs) do
+  local hl = 'DiagnosticSign' .. type
+  vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = hl })
+end
 
 -- null-ls setup for formatting and linting
 local null_ls = require 'null-ls'
@@ -1486,9 +1617,20 @@ cmp.event:on('confirm_done', cmp_autopairs.on_confirm_done())
 -- Function to set transparency
 local function set_transparency()
   local groups = {
-    'Normal', 'NormalFloat', 'NormalNC', 'SignColumn', 'EndOfBuffer',
-    'LineNr', 'CursorLineNr', 'VertSplit', 'Folded', 'NonText',
-    'SpecialKey', 'Pmenu', 'PmenuSbar', 'PmenuThumb'
+    'Normal',
+    'NormalFloat',
+    'NormalNC',
+    'SignColumn',
+    'EndOfBuffer',
+    'LineNr',
+    'CursorLineNr',
+    'VertSplit',
+    'Folded',
+    'NonText',
+    'SpecialKey',
+    'Pmenu',
+    'PmenuSbar',
+    'PmenuThumb',
   }
   for _, group in ipairs(groups) do
     vim.api.nvim_set_hl(0, group, { bg = 'NONE', ctermbg = 'NONE' })
@@ -1499,12 +1641,12 @@ local function set_transparency()
   vim.opt.winblend = 10
 
   -- Force transparency for specific colorschemes that might override it
-  vim.cmd([[
+  vim.cmd [[
     hi Normal guibg=NONE ctermbg=NONE
     hi NormalNC guibg=NONE ctermbg=NONE
     hi EndOfBuffer guibg=NONE ctermbg=NONE
     hi SignColumn guibg=NONE ctermbg=NONE
-  ]])
+  ]]
 end
 
 -- ColorScheme adjustments for transparency
@@ -1687,13 +1829,13 @@ require('tokyonight').setup {
     floats = 'transparent',
   },
   on_colors = function(colors)
-    colors.bg = "NONE"
-    colors.bg_dark = "NONE"
-    colors.bg_float = "NONE"
-    colors.bg_highlight = "NONE"
-    colors.bg_popup = "NONE"
-    colors.bg_sidebar = "NONE"
-    colors.bg_statusline = "NONE"
+    colors.bg = 'NONE'
+    colors.bg_dark = 'NONE'
+    colors.bg_float = 'NONE'
+    colors.bg_highlight = 'NONE'
+    colors.bg_popup = 'NONE'
+    colors.bg_sidebar = 'NONE'
+    colors.bg_statusline = 'NONE'
   end,
 }
 -- Ensure transparency is set after colorscheme
@@ -2353,5 +2495,42 @@ end
 
 -- Keybinding for copying user flows to clipboard
 vim.keymap.set('n', '<leader>tc', copy_user_flows_to_clipboard, { desc = 'Copy user flows to clipboard' })
+
+-- Function to open or create a notes file
+function open_notes()
+  local notes_dir = vim.fn.expand '~/notes'
+  if vim.fn.isdirectory(notes_dir) == 0 then
+    vim.fn.mkdir(notes_dir, 'p')
+  end
+
+  require('telescope.builtin').find_files {
+    prompt_title = '< Notes >',
+    cwd = notes_dir,
+    find_command = { 'rg', '--files', '--hidden', '--glob', '!.git/*' },
+  }
+end
+
+-- Ensure this block is placed after all plugin configurations
+vim.api.nvim_create_autocmd('VimEnter', {
+  callback = function()
+    -- Command to open notes
+    vim.api.nvim_create_user_command('Notes', open_notes, {})
+
+    -- Refresh which-key to ensure all mappings are up-to-date
+    require('which-key').reset()
+  end,
+})
+
+-- Ensure Telescope is properly set up
+require('telescope').setup {
+  defaults = {
+    -- Add any Telescope-specific settings here
+  },
+  pickers = {
+    find_files = {
+      theme = 'dropdown',
+    },
+  },
+}
 
 print 'Neovim configuration loaded successfully!'
