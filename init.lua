@@ -293,17 +293,7 @@ require('lazy').setup {
     priority = 1000,
   },
   {
-    'navarasu/onedark.nvim',
-    lazy = false,
-    priority = 1000,
-  },
-  {
     'folke/lsp-colors.nvim',
-    lazy = false,
-    priority = 1000,
-  },
-  {
-    'rebelot/kanagawa.nvim',
     lazy = false,
     priority = 1000,
   },
@@ -1951,7 +1941,125 @@ local function trace_causal_chain_for_node(node)
   return causal_chain
 end
 
--- Function to analyze causal chains and identify user flows
+local parsers = require 'nvim-treesitter.parsers'
+local bufnr = vim.api.nvim_get_current_buf()
+local root = parsers.get_parser(bufnr):parse()[1]:root()
+
+local all_chains = {}
+local user_flows = {}
+
+local function analyze_node(node)
+  local start_row, _, end_row, _ = node:range()
+  local chain = trace_causal_chain_for_node(node)
+  if #chain > 0 then
+    table.insert(all_chains, {
+      range = { start_row + 1, end_row + 1 },
+      chain = chain,
+    })
+  end
+
+  for child in node:iter_children() do
+    analyze_node(child)
+  end
+end
+
+analyze_node(root)
+
+-- Identify user flows from causal chains
+for _, chain in ipairs(all_chains) do
+  local flow = {
+    entry_point = nil,
+    user_interactions = {},
+    data_flow = {},
+    exit_points = {},
+  }
+
+  for _, item in ipairs(chain.chain) do
+    if item.type == 'function_definition' and (item.text:match 'handle' or item.text:match 'route') then
+      flow.entry_point = item.text
+    elseif item.type == 'call_expression' and (item.text:match 'input' or item.text:match 'get' or item.text:match 'post') then
+      table.insert(flow.user_interactions, item.text)
+    elseif item.type == 'assignment_expression' or item.type == 'variable_declaration' then
+      table.insert(flow.data_flow, item.text)
+    elseif item.type == 'return_statement' or item.text:match 'render' or item.text:match 'redirect' then
+      table.insert(flow.exit_points, item.text)
+    end
+  end
+
+  if flow.entry_point then
+    table.insert(user_flows, flow)
+  end
+end
+
+-- Display user flows
+if #user_flows == 0 then
+  print 'No user flows identified in the current buffer.'
+  return
+end
+
+local lines = {}
+for i, flow in ipairs(user_flows) do
+  table.insert(lines, string.format('User Flow %d:', i))
+  table.insert(lines, string.format('  Entry Point: %s', flow.entry_point))
+  table.insert(lines, '  User Interactions:')
+  for _, interaction in ipairs(flow.user_interactions) do
+    table.insert(lines, string.format('    - %s', interaction))
+  end
+  table.insert(lines, '  Data Flow:')
+  for _, data in ipairs(flow.data_flow) do
+    table.insert(lines, string.format('    - %s', data))
+  end
+  table.insert(lines, '  Exit Points:')
+  for _, exit in ipairs(flow.exit_points) do
+    table.insert(lines, string.format('    - %s', exit))
+  end
+  table.insert(lines, '')
+end
+
+vim.ui.select(lines, {
+  prompt = 'Identified User Flows:',
+  format_item = function(item)
+    return item
+  end,
+}, function(choice)
+  if choice then
+    local flow_num = tonumber(choice:match 'User Flow (%d+):')
+    if flow_num then
+      local selected_flow = user_flows[flow_num]
+      local details = {
+        string.format('User Flow %d Details:', flow_num),
+        string.format('Entry Point: %s', selected_flow.entry_point),
+        'User Interactions:',
+      }
+      for _, interaction in ipairs(selected_flow.user_interactions) do
+        table.insert(details, string.format('  - %s', interaction))
+      end
+      table.insert(details, 'Data Flow:')
+      for _, data in ipairs(selected_flow.data_flow) do
+        table.insert(details, string.format('  - %s', data))
+      end
+      table.insert(details, 'Exit Points:')
+      for _, exit in ipairs(selected_flow.exit_points) do
+        table.insert(details, string.format('  - %s', exit))
+      end
+
+      vim.api.nvim_echo(
+        vim.tbl_map(function(line)
+          return { line, 'Normal' }
+        end, details),
+        false,
+        {}
+      )
+    end
+  end
+end)
+
+-- Keybinding for analyzing user flows
+vim.keymap.set('n', '<leader>tu', function()
+  analyze_user_flows()
+end, { desc = 'Analyze user flows' })
+
+-- Function to analyze user flows
 local function analyze_user_flows()
   local parsers = require 'nvim-treesitter.parsers'
   local bufnr = vim.api.nvim_get_current_buf()
@@ -2006,7 +2114,7 @@ local function analyze_user_flows()
   -- Display user flows
   if #user_flows == 0 then
     print 'No user flows identified in the current buffer.'
-    return
+    return user_flows
   end
 
   local lines = {}
@@ -2065,9 +2173,42 @@ local function analyze_user_flows()
       end
     end
   end)
+
+  return user_flows
 end
 
--- Keybinding for analyzing user flows
-vim.keymap.set('n', '<leader>tu', analyze_user_flows, { desc = 'Analyze user flows' })
+-- Function to copy user flows to clipboard
+local function copy_user_flows_to_clipboard()
+  local flows = analyze_user_flows(true) -- We'll modify analyze_user_flows to return the flows
+  if #flows == 0 then
+    print 'No user flows to copy.'
+    return
+  end
+
+  local clipboard_text = ''
+  for i, flow in ipairs(flows) do
+    clipboard_text = clipboard_text .. string.format('User Flow %d:\n', i)
+    clipboard_text = clipboard_text .. string.format('  Entry Point: %s\n', flow.entry_point)
+    clipboard_text = clipboard_text .. '  User Interactions:\n'
+    for _, interaction in ipairs(flow.user_interactions) do
+      clipboard_text = clipboard_text .. string.format('    - %s\n', interaction)
+    end
+    clipboard_text = clipboard_text .. '  Data Flow:\n'
+    for _, data in ipairs(flow.data_flow) do
+      clipboard_text = clipboard_text .. string.format('    - %s\n', data)
+    end
+    clipboard_text = clipboard_text .. '  Exit Points:\n'
+    for _, exit in ipairs(flow.exit_points) do
+      clipboard_text = clipboard_text .. string.format('    - %s\n', exit)
+    end
+    clipboard_text = clipboard_text .. '\n'
+  end
+
+  vim.fn.setreg('+', clipboard_text)
+  print 'User flows copied to clipboard.'
+end
+
+-- Keybinding for copying user flows to clipboard
+vim.keymap.set('n', '<leader>tc', copy_user_flows_to_clipboard, { desc = 'Copy user flows to clipboard' })
 
 print 'Neovim configuration loaded successfully!'
