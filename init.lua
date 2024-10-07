@@ -889,6 +889,51 @@ require('lazy').setup {
     end,
   },
 
+  -- Go development plugins
+  {
+    'ray-x/go.nvim',
+    dependencies = {
+      'ray-x/guihua.lua',
+      'neovim/nvim-lspconfig',
+      'nvim-treesitter/nvim-treesitter',
+    },
+    config = function()
+      require('go').setup()
+    end,
+    event = { 'CmdlineEnter' },
+    ft = { 'go', 'gomod' },
+    build = ':lua require("go.install").update_all_sync()',
+  },
+  {
+    'leoluz/nvim-dap-go',
+    dependencies = { 'mfussenegger/nvim-dap' },
+    config = function()
+      require('dap-go').setup()
+    end,
+  },
+  {
+    'olexsmir/gopher.nvim',
+    dependencies = {
+      'nvim-lua/plenary.nvim',
+      'nvim-treesitter/nvim-treesitter',
+    },
+    config = function()
+      require('gopher').setup()
+    end,
+  },
+  {
+    'fatih/vim-go',
+    ft = { 'go' },
+    config = function()
+      vim.g.go_highlight_functions = 1
+      vim.g.go_highlight_methods = 1
+      vim.g.go_highlight_structs = 1
+      vim.g.go_highlight_operators = 1
+      vim.g.go_highlight_build_constraints = 1
+      vim.g.go_fmt_command = 'goimports'
+    end,
+  },
+
   -- Smart-open for fast file-finding
   {
     'danielfalk/smart-open.nvim',
@@ -2530,6 +2575,47 @@ require('telescope').setup {
     find_files = {
       theme = 'dropdown',
     },
+  },
+}
+
+-- Go development configuration
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'go',
+  callback = function()
+    -- Go specific keybindings
+    vim.keymap.set('n', '<leader>gr', '<cmd>GoRun<CR>', { buffer = true, desc = 'Go Run' })
+    vim.keymap.set('n', '<leader>gt', '<cmd>GoTest<CR>', { buffer = true, desc = 'Go Test' })
+    vim.keymap.set('n', '<leader>gi', '<cmd>GoImpl<CR>', { buffer = true, desc = 'Go Implement' })
+    vim.keymap.set('n', '<leader>gd', '<cmd>GoDef<CR>', { buffer = true, desc = 'Go to Definition' })
+    vim.keymap.set('n', '<leader>gD', '<cmd>GoDoc<CR>', { buffer = true, desc = 'Go Documentation' })
+    vim.keymap.set('n', '<leader>gf', '<cmd>GoFillStruct<CR>', { buffer = true, desc = 'Go Fill Struct' })
+    vim.keymap.set('n', '<leader>ge', '<cmd>GoIfErr<CR>', { buffer = true, desc = 'Go If Err' })
+  end,
+})
+
+-- Configure go.nvim
+require('go').setup {
+  -- Add any specific configuration here
+  goimport = 'gopls', -- use gopls for auto import
+  gofmt = 'gofumpt', -- use gofumpt for better formatting
+  max_line_len = 120,
+  tag_transform = false,
+  test_dir = '',
+  comment_placeholder = '   ',
+  lsp_cfg = true, -- false: use your own lspconfig
+  lsp_gofumpt = true, -- true: set default gofmt in gopls format to gofumpt
+  lsp_on_attach = true, -- use on_attach from go.nvim
+  dap_debug = true,
+}
+
+-- Configure gopher.nvim
+require('gopher').setup {
+  commands = {
+    go = 'go',
+    gomodifytags = 'gomodifytags',
+    gotests = 'gotests',
+    impl = 'impl',
+    iferr = 'iferr',
   },
 }
 
