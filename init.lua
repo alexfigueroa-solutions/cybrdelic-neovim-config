@@ -17,11 +17,51 @@ function open_notes()
         prompt_title = '< Notes >',
         cwd = notes_dir,
         find_command = { 'rg', '--files', '--hidden', '--glob', '!.git/*' },
+        attach_mappings = function(_, map)
+          map('i', '<CR>', function(prompt_bufnr)
+            local selection = require('telescope.actions.state').get_selected_entry()
+            require('telescope.actions').close(prompt_bufnr)
+            if selection then
+              edit_note(notes_dir .. '/' .. selection.value)
+            end
+          end)
+          return true
+        end,
       }
     elseif choice == 'Create new note' then
       create_new_note(notes_dir)
     end
   end)
+end
+
+-- Function to edit an existing note
+function edit_note(file_path)
+  -- Open the file in a new buffer
+  vim.cmd('edit ' .. vim.fn.fnameescape(file_path))
+
+  -- Set buffer-local options for Markdown editing
+  vim.api.nvim_buf_set_option(0, 'filetype', 'markdown')
+  vim.api.nvim_buf_set_option(0, 'textwidth', 80)
+  vim.api.nvim_buf_set_option(0, 'wrap', true)
+  vim.api.nvim_buf_set_option(0, 'linebreak', true)
+
+  -- Set up Markdown-specific keybindings
+  vim.api.nvim_buf_set_keymap(0, 'n', '<leader>mp', ':MarkdownPreviewToggle<CR>', { noremap = true, silent = true })
+  vim.api.nvim_buf_set_keymap(0, 'n', '<leader>mt', 'yypVr=', { noremap = true, desc = 'Create Markdown h1 title' })
+  vim.api.nvim_buf_set_keymap(0, 'n', '<leader>ms', 'yypVr-', { noremap = true, desc = 'Create Markdown h2 title' })
+  vim.api.nvim_buf_set_keymap(0, 'n', '<leader>mb', 'ciw**<C-r>"**<Esc>', { noremap = true, desc = 'Make word bold' })
+  vim.api.nvim_buf_set_keymap(0, 'n', '<leader>mi', 'ciw*<C-r>"*<Esc>', { noremap = true, desc = 'Make word italic' })
+
+  -- Set up autocommand to save the file on buffer leave
+  vim.api.nvim_create_autocmd('BufLeave', {
+    pattern = file_path,
+    callback = function()
+      if vim.bo.modified then
+        vim.cmd 'write'
+        print('Note updated: ' .. vim.fn.fnamemodify(file_path, ':t'))
+      end
+    end,
+  })
 end
 
 -- Function to create a new note
@@ -30,7 +70,13 @@ function create_new_note(notes_dir)
     if input then
       local filename = input .. '.md'
       local file_path = notes_dir .. '/' .. filename
-      vim.cmd('edit ' .. file_path)
+
+      -- Create the file
+      vim.fn.writefile({}, file_path)
+
+      -- Open the new file for editing
+      edit_note(file_path)
+
       print('Created new note: ' .. filename)
     end
   end)
@@ -457,6 +503,10 @@ require('lazy').setup {
       'nvim-lua/plenary.nvim',
       'BurntSushi/ripgrep',
     },
+  },
+  -- nui.nvim for better UI components
+  {
+    'MunifTanjim/nui.nvim',
     config = function()
       local telescope = require 'telescope'
       telescope.setup {
@@ -721,6 +771,17 @@ require('lazy').setup {
     config = function()
       require('alpha').setup(require('alpha.themes.dashboard').config)
     end,
+  },
+
+  -- Markdown preview
+  {
+    'iamcco/markdown-preview.nvim',
+    cmd = { 'MarkdownPreviewToggle', 'MarkdownPreview', 'MarkdownPreviewStop' },
+    build = 'cd app && yarn install',
+    init = function()
+      vim.g.mkdp_filetypes = { 'markdown' }
+    end,
+    ft = { 'markdown' },
   },
 
   -- Session management
@@ -1542,6 +1603,24 @@ wk.register {
   ['<C-k>'] = { '<C-w>k', 'Move to window above' },
   ['<C-l>'] = { '<C-w>l', 'Move to right window' },
 }
+
+-- Buffer navigation and management
+wk.register {
+  ['<leader>b'] = {
+    name = ' Buffer',
+    n = { ':bnext<CR>', 'Next buffer' },
+    p = { ':bprevious<CR>', 'Previous buffer' },
+    d = { ':bdelete<CR>', 'Delete buffer' },
+    D = { ':bdelete!<CR>', 'Force delete buffer' },
+  },
+}
+
+-- Direct buffer navigation
+for i = 1, 9 do
+  wk.register {
+    ['<leader>' .. i] = { ':' .. i .. 'b<CR>', 'Go to buffer ' .. i },
+  }
+end
 
 -- Hop keybindings
 -- Commented out until the plugin is properly installed
