@@ -616,7 +616,7 @@ require('lazy').setup {
     dependencies = {
       'williamboman/mason.nvim', -- LSP installer
       'williamboman/mason-lspconfig.nvim',
-      'folke/trouble.nvim',      -- Better diagnostic display
+      'folke/trouble.nvim', -- Better diagnostic display
     },
   },
 
@@ -632,13 +632,22 @@ require('lazy').setup {
     build = ':TSUpdate',
     config = function()
       require('nvim-treesitter.configs').setup {
-        ensure_installed = { 'bash', 'c', 'lua', 'rust', 'python', 'javascript', 'html', 'css', 'json', 'yaml' },
+        ensure_installed = { 'bash', 'c', 'lua', 'rust', 'python', 'javascript', 'typescript', 'html', 'css', 'json', 'yaml', 'go', 'markdown', 'vim' },
         highlight = {
           enable = true,
           additional_vim_regex_highlighting = false,
         },
         indent = {
           enable = true,
+        },
+        incremental_selection = {
+          enable = true,
+          keymaps = {
+            init_selection = 'gnn',
+            node_incremental = 'grn',
+            scope_incremental = 'grc',
+            node_decremental = 'grm',
+          },
         },
       }
     end,
@@ -663,11 +672,42 @@ require('lazy').setup {
     'kevinhwang91/nvim-ufo',
     dependencies = 'kevinhwang91/promise-async',
     config = function()
+      vim.o.foldcolumn = '1'
+      vim.o.foldlevel = 99
+      vim.o.foldlevelstart = 99
+      vim.o.foldenable = true
+
       require('ufo').setup {
+        open_fold_hl_timeout = 150,
+        close_fold_kinds = { 'imports', 'comment' },
+        preview = {
+          win_config = {
+            border = { '', '─', '', '', '', '─', '', '' },
+            winhighlight = 'Normal:Folded',
+            winblend = 0,
+          },
+          mappings = {
+            scrollU = '<C-u>',
+            scrollD = '<C-d>',
+            jumpTop = '[',
+            jumpBot = ']',
+          },
+        },
         provider_selector = function(bufnr, filetype, buftype)
           return { 'treesitter', 'indent' }
         end,
       }
+
+      vim.keymap.set('n', 'zR', require('ufo').openAllFolds)
+      vim.keymap.set('n', 'zM', require('ufo').closeAllFolds)
+      vim.keymap.set('n', 'zr', require('ufo').openFoldsExceptKinds)
+      vim.keymap.set('n', 'zm', require('ufo').closeFoldsWith)
+      vim.keymap.set('n', 'K', function()
+        local winid = require('ufo').peekFoldedLinesUnderCursor()
+        if not winid then
+          vim.lsp.buf.hover()
+        end
+      end)
     end,
   },
 
@@ -683,9 +723,9 @@ require('lazy').setup {
   {
     'hrsh7th/nvim-cmp',
     dependencies = {
-      'L3MON4D3/LuaSnip',             -- Snippet engine
-      'saadparwaiz1/cmp_luasnip',     -- Snippet completions
-      'hrsh7th/cmp-nvim-lsp',         -- LSP completions
+      'L3MON4D3/LuaSnip', -- Snippet engine
+      'saadparwaiz1/cmp_luasnip', -- Snippet completions
+      'hrsh7th/cmp-nvim-lsp', -- LSP completions
       'rafamadriz/friendly-snippets', -- Predefined snippets
     },
   },
@@ -706,14 +746,48 @@ require('lazy').setup {
           end
         end,
         open_mapping = [[<C-\>]],
+        hide_numbers = true,
+        shade_filetypes = {},
+        shade_terminals = true,
+        shading_factor = 2,
+        start_in_insert = true,
+        insert_mappings = true,
+        persist_size = true,
         direction = 'float',
+        close_on_exit = true,
+        shell = vim.o.shell,
         float_opts = {
           border = 'curved',
+          winblend = 0,
+          highlights = {
+            border = 'Normal',
+            background = 'Normal',
+          },
           width = math.floor(vim.o.columns * 0.8),
           height = math.floor(vim.o.lines * 0.8),
-          winblend = 25,
         },
       }
+
+      function _G.set_terminal_keymaps()
+        local opts = { noremap = true }
+        vim.api.nvim_buf_set_keymap(0, 't', '<esc>', [[<C-\><C-n>]], opts)
+        vim.api.nvim_buf_set_keymap(0, 't', 'jk', [[<C-\><C-n>]], opts)
+        vim.api.nvim_buf_set_keymap(0, 't', '<C-h>', [[<C-\><C-n><C-W>h]], opts)
+        vim.api.nvim_buf_set_keymap(0, 't', '<C-j>', [[<C-\><C-n><C-W>j]], opts)
+        vim.api.nvim_buf_set_keymap(0, 't', '<C-k>', [[<C-\><C-n><C-W>k]], opts)
+        vim.api.nvim_buf_set_keymap(0, 't', '<C-l>', [[<C-\><C-n><C-W>l]], opts)
+      end
+
+      vim.cmd 'autocmd! TermOpen term://* lua set_terminal_keymaps()'
+
+      local Terminal = require('toggleterm.terminal').Terminal
+      local lazygit = Terminal:new { cmd = 'lazygit', hidden = true }
+
+      function _LAZYGIT_TOGGLE()
+        lazygit:toggle()
+      end
+
+      vim.api.nvim_set_keymap('n', '<leader>g', '<cmd>lua _LAZYGIT_TOGGLE()<CR>', { noremap = true, silent = true })
     end,
   },
 
@@ -750,7 +824,30 @@ require('lazy').setup {
   {
     'numToStr/Comment.nvim',
     config = function()
-      require('Comment').setup()
+      require('Comment').setup {
+        padding = true,
+        sticky = true,
+        ignore = nil,
+        toggler = {
+          line = 'gcc',
+          block = 'gbc',
+        },
+        opleader = {
+          line = 'gc',
+          block = 'gb',
+        },
+        extra = {
+          above = 'gcO',
+          below = 'gco',
+          eol = 'gcA',
+        },
+        mappings = {
+          basic = true,
+          extra = true,
+        },
+        pre_hook = nil,
+        post_hook = nil,
+      }
     end,
   },
 
@@ -793,9 +890,9 @@ require('lazy').setup {
       local actions = require 'diffview.actions'
 
       require('diffview').setup {
-        diff_binaries = false,   -- Show diffs for binaries
+        diff_binaries = false, -- Show diffs for binaries
         enhanced_diff_hl = true, -- Use enhanced highlighting for diffs
-        use_icons = true,        -- Requires nvim-web-devicons
+        use_icons = true, -- Requires nvim-web-devicons
         keymaps = {
           view = {
             ['<leader>dq'] = actions.close, -- Close the diffview
@@ -842,8 +939,16 @@ require('lazy').setup {
   -- Startup screen
   {
     'goolord/alpha-nvim',
+    priority = 1000,
     config = function()
-      require('alpha').setup(require('alpha.themes.dashboard').config)
+      local alpha = require 'alpha'
+      local dashboard = require 'alpha.themes.dashboard'
+      alpha.setup(dashboard.config)
+
+      -- Disable folding on alpha buffer
+      vim.cmd [[
+        autocmd FileType alpha setlocal nofoldenable
+      ]]
     end,
   },
 
@@ -1018,8 +1123,7 @@ require('lazy').setup {
       vim.api.nvim_create_autocmd('FileType', {
         pattern = 'markdown',
         callback = function()
-          vim.api.nvim_buf_set_keymap(0, 'n', '<leader>mp', ':MarkdownPreviewToggle<CR>',
-            { noremap = true, silent = true })
+          vim.api.nvim_buf_set_keymap(0, 'n', '<leader>mp', ':MarkdownPreviewToggle<CR>', { noremap = true, silent = true })
         end,
       })
     end,
@@ -1036,126 +1140,126 @@ require('lazy').setup {
     config = function()
       require('octo').setup {
         default_remote = { 'upstream', 'origin' }, -- order to try remotes
-        ssh_aliases = {},                          -- SSH aliases. e.g. `ssh_aliases = {["github.com-work"] = "github.com"}`
-        reaction_viewer_hint_icon = '',            -- marker for user reactions
-        user_icon = ' ',                           -- user icon
-        timeline_marker = '',                      -- timeline marker
-        timeline_indent = '2',                     -- timeline indentation
-        right_bubble_delimiter = '',               -- bubble delimiter
-        left_bubble_delimiter = '',                -- bubble delimiter
-        github_hostname = '',                      -- GitHub Enterprise host
-        snippet_context_lines = 4,                 -- number or lines around commented lines
+        ssh_aliases = {}, -- SSH aliases. e.g. `ssh_aliases = {["github.com-work"] = "github.com"}`
+        reaction_viewer_hint_icon = '', -- marker for user reactions
+        user_icon = ' ', -- user icon
+        timeline_marker = '', -- timeline marker
+        timeline_indent = '2', -- timeline indentation
+        right_bubble_delimiter = '', -- bubble delimiter
+        left_bubble_delimiter = '', -- bubble delimiter
+        github_hostname = '', -- GitHub Enterprise host
+        snippet_context_lines = 4, -- number or lines around commented lines
         file_panel = {
-          size = 10,                               -- changed files panel rows
-          use_icons = true,                        -- use web-devicons in file panel
+          size = 10, -- changed files panel rows
+          use_icons = true, -- use web-devicons in file panel
         },
         mappings = {
           issue = {
-            close_issue = '<space>ic',       -- close issue
-            reopen_issue = '<space>io',      -- reopen issue
-            list_issues = '<space>il',       -- list open issues on same repo
-            reload = '<C-r>',                -- reload issue
-            open_in_browser = '<C-b>',       -- open issue in browser
-            copy_url = '<C-y>',              -- copy url to system clipboard
-            add_assignee = '<space>aa',      -- add assignee
-            remove_assignee = '<space>ad',   -- remove assignee
-            create_label = '<space>lc',      -- create label
-            add_label = '<space>la',         -- add label
-            remove_label = '<space>ld',      -- remove label
-            goto_issue = '<space>gi',        -- navigate to a local repo issue
-            add_comment = '<space>ca',       -- add comment
-            delete_comment = '<space>cd',    -- delete comment
-            next_comment = ']c',             -- go to next comment
-            prev_comment = '[c',             -- go to previous comment
-            react_hooray = '<space>rp',      -- add/remove 🎉 reaction
-            react_heart = '<space>rh',       -- add/remove ❤️ reaction
-            react_eyes = '<space>re',        -- add/remove 👀 reaction
-            react_thumbs_up = '<space>r+',   -- add/remove 👍 reaction
+            close_issue = '<space>ic', -- close issue
+            reopen_issue = '<space>io', -- reopen issue
+            list_issues = '<space>il', -- list open issues on same repo
+            reload = '<C-r>', -- reload issue
+            open_in_browser = '<C-b>', -- open issue in browser
+            copy_url = '<C-y>', -- copy url to system clipboard
+            add_assignee = '<space>aa', -- add assignee
+            remove_assignee = '<space>ad', -- remove assignee
+            create_label = '<space>lc', -- create label
+            add_label = '<space>la', -- add label
+            remove_label = '<space>ld', -- remove label
+            goto_issue = '<space>gi', -- navigate to a local repo issue
+            add_comment = '<space>ca', -- add comment
+            delete_comment = '<space>cd', -- delete comment
+            next_comment = ']c', -- go to next comment
+            prev_comment = '[c', -- go to previous comment
+            react_hooray = '<space>rp', -- add/remove 🎉 reaction
+            react_heart = '<space>rh', -- add/remove ❤️ reaction
+            react_eyes = '<space>re', -- add/remove 👀 reaction
+            react_thumbs_up = '<space>r+', -- add/remove 👍 reaction
             react_thumbs_down = '<space>r-', -- add/remove 👎 reaction
-            react_rocket = '<space>rr',      -- add/remove 🚀 reaction
-            react_laugh = '<space>rl',       -- add/remove 😄 reaction
-            react_confused = '<space>rc',    -- add/remove 😕 reaction
+            react_rocket = '<space>rr', -- add/remove 🚀 reaction
+            react_laugh = '<space>rl', -- add/remove 😄 reaction
+            react_confused = '<space>rc', -- add/remove 😕 reaction
           },
           pull_request = {
-            checkout_pr = '<space>po',        -- checkout PR
-            merge_pr = '<space>pm',           -- merge PR
-            list_commits = '<space>pc',       -- list PR commits
+            checkout_pr = '<space>po', -- checkout PR
+            merge_pr = '<space>pm', -- merge PR
+            list_commits = '<space>pc', -- list PR commits
             list_changed_files = '<space>pf', -- list PR changed files
-            show_pr_diff = '<space>pd',       -- show PR diff
-            add_reviewer = '<space>va',       -- add reviewer
-            remove_reviewer = '<space>vd',    -- remove reviewer request
-            close_issue = '<space>ic',        -- close PR
-            reopen_issue = '<space>io',       -- reopen PR
-            list_issues = '<space>il',        -- list open issues on same repo
-            reload = '<C-r>',                 -- reload PR
-            open_in_browser = '<C-b>',        -- open PR in browser
-            copy_url = '<C-y>',               -- copy url to system clipboard
-            add_assignee = '<space>aa',       -- add assignee
-            remove_assignee = '<space>ad',    -- remove assignee
-            create_label = '<space>lc',       -- create label
-            add_label = '<space>la',          -- add label
-            remove_label = '<space>ld',       -- remove label
-            goto_issue = '<space>gi',         -- navigate to a local repo issue
-            add_comment = '<space>ca',        -- add comment
-            delete_comment = '<space>cd',     -- delete comment
-            next_comment = ']c',              -- go to next comment
-            prev_comment = '[c',              -- go to previous comment
-            react_hooray = '<space>rp',       -- add/remove 🎉 reaction
-            react_heart = '<space>rh',        -- add/remove ❤️ reaction
-            react_eyes = '<space>re',         -- add/remove 👀 reaction
-            react_thumbs_up = '<space>r+',    -- add/remove 👍 reaction
-            react_thumbs_down = '<space>r-',  -- add/remove 👎 reaction
-            react_rocket = '<space>rr',       -- add/remove 🚀 reaction
-            react_laugh = '<space>rl',        -- add/remove 😄 reaction
-            react_confused = '<space>rc',     -- add/remove 😕 reaction
+            show_pr_diff = '<space>pd', -- show PR diff
+            add_reviewer = '<space>va', -- add reviewer
+            remove_reviewer = '<space>vd', -- remove reviewer request
+            close_issue = '<space>ic', -- close PR
+            reopen_issue = '<space>io', -- reopen PR
+            list_issues = '<space>il', -- list open issues on same repo
+            reload = '<C-r>', -- reload PR
+            open_in_browser = '<C-b>', -- open PR in browser
+            copy_url = '<C-y>', -- copy url to system clipboard
+            add_assignee = '<space>aa', -- add assignee
+            remove_assignee = '<space>ad', -- remove assignee
+            create_label = '<space>lc', -- create label
+            add_label = '<space>la', -- add label
+            remove_label = '<space>ld', -- remove label
+            goto_issue = '<space>gi', -- navigate to a local repo issue
+            add_comment = '<space>ca', -- add comment
+            delete_comment = '<space>cd', -- delete comment
+            next_comment = ']c', -- go to next comment
+            prev_comment = '[c', -- go to previous comment
+            react_hooray = '<space>rp', -- add/remove 🎉 reaction
+            react_heart = '<space>rh', -- add/remove ❤️ reaction
+            react_eyes = '<space>re', -- add/remove 👀 reaction
+            react_thumbs_up = '<space>r+', -- add/remove 👍 reaction
+            react_thumbs_down = '<space>r-', -- add/remove 👎 reaction
+            react_rocket = '<space>rr', -- add/remove 🚀 reaction
+            react_laugh = '<space>rl', -- add/remove 😄 reaction
+            react_confused = '<space>rc', -- add/remove 😕 reaction
           },
           review_thread = {
-            goto_issue = '<space>gi',        -- navigate to a local repo issue
-            add_comment = '<space>ca',       -- add comment
-            add_suggestion = '<space>sa',    -- add suggestion
-            delete_comment = '<space>cd',    -- delete comment
-            next_comment = ']c',             -- go to next comment
-            prev_comment = '[c',             -- go to previous comment
-            select_next_entry = ']q',        -- move to previous changed file
-            select_prev_entry = '[q',        -- move to next changed file
-            close_review_tab = '<C-c>',      -- close review tab
-            react_hooray = '<space>rp',      -- add/remove 🎉 reaction
-            react_heart = '<space>rh',       -- add/remove ❤️ reaction
-            react_eyes = '<space>re',        -- add/remove 👀 reaction
-            react_thumbs_up = '<space>r+',   -- add/remove 👍 reaction
+            goto_issue = '<space>gi', -- navigate to a local repo issue
+            add_comment = '<space>ca', -- add comment
+            add_suggestion = '<space>sa', -- add suggestion
+            delete_comment = '<space>cd', -- delete comment
+            next_comment = ']c', -- go to next comment
+            prev_comment = '[c', -- go to previous comment
+            select_next_entry = ']q', -- move to previous changed file
+            select_prev_entry = '[q', -- move to next changed file
+            close_review_tab = '<C-c>', -- close review tab
+            react_hooray = '<space>rp', -- add/remove 🎉 reaction
+            react_heart = '<space>rh', -- add/remove ❤️ reaction
+            react_eyes = '<space>re', -- add/remove 👀 reaction
+            react_thumbs_up = '<space>r+', -- add/remove 👍 reaction
             react_thumbs_down = '<space>r-', -- add/remove 👎 reaction
-            react_rocket = '<space>rr',      -- add/remove 🚀 reaction
-            react_laugh = '<space>rl',       -- add/remove 😄 reaction
-            react_confused = '<space>rc',    -- add/remove 😕 reaction
+            react_rocket = '<space>rr', -- add/remove 🚀 reaction
+            react_laugh = '<space>rl', -- add/remove 😄 reaction
+            react_confused = '<space>rc', -- add/remove 😕 reaction
           },
           submit_win = {
-            approve_review = '<C-a>',   -- approve review
-            comment_review = '<C-m>',   -- comment review
-            request_changes = '<C-r>',  -- request changes review
+            approve_review = '<C-a>', -- approve review
+            comment_review = '<C-m>', -- comment review
+            request_changes = '<C-r>', -- request changes review
             close_review_tab = '<C-c>', -- close review tab
           },
           review_diff = {
-            add_review_comment = '<space>ca',    -- add a new review comment
+            add_review_comment = '<space>ca', -- add a new review comment
             add_review_suggestion = '<space>sa', -- add a new review suggestion
-            focus_files = '<leader>e',           -- move focus to changed file panel
-            toggle_files = '<leader>b',          -- hide/show changed files panel
-            next_thread = ']t',                  -- move to next thread
-            prev_thread = '[t',                  -- move to previous thread
-            select_next_entry = ']q',            -- move to previous changed file
-            select_prev_entry = '[q',            -- move to next changed file
-            close_review_tab = '<C-c>',          -- close review tab
-            toggle_viewed = '<leader><space>',   -- toggle viewer viewed state
+            focus_files = '<leader>e', -- move focus to changed file panel
+            toggle_files = '<leader>b', -- hide/show changed files panel
+            next_thread = ']t', -- move to next thread
+            prev_thread = '[t', -- move to previous thread
+            select_next_entry = ']q', -- move to previous changed file
+            select_prev_entry = '[q', -- move to next changed file
+            close_review_tab = '<C-c>', -- close review tab
+            toggle_viewed = '<leader><space>', -- toggle viewer viewed state
           },
           file_panel = {
-            next_entry = 'j',                  -- move to next changed file
-            prev_entry = 'k',                  -- move to previous changed file
-            select_entry = '<cr>',             -- show selected changed file diffs
-            refresh_files = 'R',               -- refresh changed files panel
-            focus_files = '<leader>e',         -- move focus to changed file panel
-            toggle_files = '<leader>b',        -- hide/show changed files panel
-            select_next_entry = ']q',          -- move to previous changed file
-            select_prev_entry = '[q',          -- move to next changed file
-            close_review_tab = '<C-c>',        -- close review tab
+            next_entry = 'j', -- move to next changed file
+            prev_entry = 'k', -- move to previous changed file
+            select_entry = '<cr>', -- show selected changed file diffs
+            refresh_files = 'R', -- refresh changed files panel
+            focus_files = '<leader>e', -- move focus to changed file panel
+            toggle_files = '<leader>b', -- hide/show changed files panel
+            select_next_entry = ']q', -- move to previous changed file
+            select_prev_entry = '[q', -- move to next changed file
+            close_review_tab = '<C-c>', -- close review tab
             toggle_viewed = '<leader><space>', -- toggle viewer viewed state
           },
         },
@@ -1228,6 +1332,10 @@ require('lazy').setup {
     config = function()
       vim.keymap.set('n', '<leader>gs', ':Git<CR>', { desc = 'Git status' })
       vim.keymap.set('n', '<leader>gd', ':Gvdiffsplit<CR>', { desc = 'Git diff' })
+      vim.keymap.set('n', '<leader>gc', ':Git commit<CR>', { desc = 'Git commit' })
+      vim.keymap.set('n', '<leader>gb', ':Git blame<CR>', { desc = 'Git blame' })
+      vim.keymap.set('n', '<leader>gl', ':Git log<CR>', { desc = 'Git log' })
+      vim.keymap.set('n', '<leader>gp', ':Git push<CR>', { desc = 'Git push' })
     end,
   },
   {
@@ -1235,11 +1343,43 @@ require('lazy').setup {
     config = function()
       require('gitsigns').setup {
         signs = {
-          add = { text = '+' },
-          change = { text = '~' },
+          add = { text = '│' },
+          change = { text = '│' },
           delete = { text = '_' },
           topdelete = { text = '‾' },
           changedelete = { text = '~' },
+          untracked = { text = '┆' },
+        },
+        signcolumn = true,
+        numhl = false,
+        linehl = false,
+        word_diff = false,
+        watch_gitdir = {
+          interval = 1000,
+          follow_files = true,
+        },
+        attach_to_untracked = true,
+        current_line_blame = false,
+        current_line_blame_opts = {
+          virt_text = true,
+          virt_text_pos = 'eol',
+          delay = 1000,
+          ignore_whitespace = false,
+        },
+        current_line_blame_formatter = '<author>, <author_time:%Y-%m-%d> - <summary>',
+        sign_priority = 6,
+        update_debounce = 100,
+        status_formatter = nil,
+        max_file_length = 40000,
+        preview_config = {
+          border = 'single',
+          style = 'minimal',
+          relative = 'cursor',
+          row = 0,
+          col = 1,
+        },
+        yadm = {
+          enable = false,
         },
         on_attach = function(bufnr)
           local gs = package.loaded.gitsigns
@@ -1293,6 +1433,9 @@ require('lazy').setup {
             gs.diffthis '~'
           end)
           map('n', '<leader>td', gs.toggle_deleted)
+
+          -- Text object
+          map({ 'o', 'x' }, 'ih', ':<C-U>Gitsigns select_hunk<CR>')
         end,
       }
     end,
@@ -1380,7 +1523,7 @@ require('lazy').setup {
     'yetone/avante.nvim',
     lazy = false,
     version = false, -- Always pull the latest changes
-    build = 'make',  -- Build command for avante.nvim
+    build = 'make', -- Build command for avante.nvim
     dependencies = {
       'nvim-treesitter/nvim-treesitter',
       'stevearc/dressing.nvim',
@@ -1449,7 +1592,7 @@ wk.setup {
     group = '+', -- symbol prepended to a group
   },
   window = {
-    border = 'single',   -- none, single, double, shadow
+    border = 'single', -- none, single, double, shadow
     position = 'bottom', -- bottom, top
   },
 }
@@ -1934,12 +2077,12 @@ null_ls.setup {
   sources = {
     -- Formatting sources
     null_ls.builtins.formatting.prettier, -- For JavaScript, TypeScript, HTML, CSS, etc.
-    null_ls.builtins.formatting.stylua,   -- For Lua
-    null_ls.builtins.formatting.black,    -- For Python
+    null_ls.builtins.formatting.stylua, -- For Lua
+    null_ls.builtins.formatting.black, -- For Python
 
     -- Diagnostics (Linting) sources
     null_ls.builtins.diagnostics.eslint_d, -- For JavaScript, TypeScript
-    null_ls.builtins.diagnostics.flake8,   -- For Python
+    null_ls.builtins.diagnostics.flake8, -- For Python
   },
 }
 
@@ -2189,8 +2332,7 @@ vim.keymap.set('n', '<leader><leader>', function()
 end, { noremap = true, silent = true, desc = 'Smart Open (Telescope)' })
 
 -- Keybinding for toggling transparency
-vim.keymap.set('n', '<leader>tt', ':TransparentToggle<CR>',
-  { noremap = true, silent = true, desc = 'Toggle transparency' })
+vim.keymap.set('n', '<leader>tt', ':TransparentToggle<CR>', { noremap = true, silent = true, desc = 'Toggle transparency' })
 
 -- Set initial colorscheme
 vim.cmd.colorscheme 'tokyonight-night'
@@ -2381,8 +2523,7 @@ local function trace_causal_chain()
     local function show_details(index)
       local item = causal_chain[index]
       local details =
-          string.format('File: %s\nLine: %d\nColumn: %d\nType: %s\nText: %s\n', filename, item.start[1] + 1,
-            item.start[2] + 1, item.type, item.text)
+        string.format('File: %s\nLine: %d\nColumn: %d\nType: %s\nText: %s\n', filename, item.start[1] + 1, item.start[2] + 1, item.type, item.text)
 
       if item.type == 'identifier' then
         local deps = variable_dependencies[item.text]
@@ -2914,8 +3055,22 @@ vim.api.nvim_create_autocmd('VimEnter', {
 
     -- Refresh which-key to ensure all mappings are up-to-date
     require('which-key').reset()
+
+    -- Close all buffers and show Alpha dashboard
+    vim.schedule(function()
+      for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+        local buftype = vim.api.nvim_buf_get_option(bufnr, 'buftype')
+        if buftype ~= 'nofile' and buftype ~= 'prompt' then
+          vim.api.nvim_buf_delete(bufnr, { force = true })
+        end
+      end
+      require('alpha').start()
+      vim.cmd 'doautocmd User AlphaReady'
+    end)
   end,
 })
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
 
 -- Ensure Telescope is properly set up
 require('telescope').setup {
@@ -2948,13 +3103,95 @@ vim.api.nvim_create_autocmd('FileType', {
 require('go').setup {
   -- Add any specific configuration here
   goimport = 'gopls', -- use gopls for auto import
-  gofmt = 'gofumpt',  -- use gofumpt for better formatting
+  gofmt = 'gofumpt', -- use gofumpt for better formatting
   max_line_len = 120,
   tag_transform = false,
   test_dir = '',
   comment_placeholder = '   ',
-  lsp_cfg = true,       -- false: use your own lspconfig
-  lsp_gofumpt = true,   -- true: set default gofmt in gopls format to gofumpt
+  lsp_cfg = true, -- false: use your own lspconfig
+  lsp_gofumpt = true, -- true: set default gofmt in gopls format to gofumpt
+  lsp_on_attach = true, -- use on_attach from go.nvim
+  dap_debug = true,
+}
+
+-- Configure gopher.nvim
+require('gopher').setup {
+  commands = {
+    go = 'go',
+    gomodifytags = 'gomodifytags',
+    gotests = 'gotests',
+    impl = 'impl',
+    iferr = 'iferr',
+  },
+}
+
+print 'Neovim configuration loaded successfully!'
+
+-- Ensure this block is placed after all plugin configurations
+vim.api.nvim_create_autocmd('VimEnter', {
+  callback = function()
+    -- Command to open notes
+    vim.api.nvim_create_user_command('Notes', open_notes, {})
+
+    -- Refresh which-key to ensure all mappings are up-to-date
+    require('which-key').reset()
+
+    -- Close all buffers and show Alpha dashboard
+    vim.schedule(function()
+      for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+        local buftype = vim.api.nvim_buf_get_option(bufnr, 'buftype')
+        if buftype ~= 'nofile' and buftype ~= 'prompt' then
+          vim.api.nvim_buf_delete(bufnr, { force = true })
+        end
+      end
+      require('alpha').start()
+      vim.cmd 'doautocmd User AlphaReady'
+    end)
+  end,
+})
+
+-- Disable netrw at the very start of your init.lua
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
+
+-- Ensure Telescope is properly set up
+require('telescope').setup {
+  defaults = {
+    -- Add any Telescope-specific settings here
+  },
+  pickers = {
+    find_files = {
+      theme = 'dropdown',
+    },
+  },
+}
+
+-- Go development configuration
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'go',
+  callback = function()
+    -- Go specific keybindings
+    vim.keymap.set('n', '<leader>gr', '<cmd>GoRun<CR>', { buffer = true, desc = 'Go Run' })
+    vim.keymap.set('n', '<leader>gt', '<cmd>GoTest<CR>', { buffer = true, desc = 'Go Test' })
+    vim.keymap.set('n', '<leader>gi', '<cmd>GoImpl<CR>', { buffer = true, desc = 'Go Implement' })
+    vim.keymap.set('n', '<leader>gd', '<cmd>GoDef<CR>', { buffer = true, desc = 'Go to Definition' })
+    vim.keymap.set('n', '<leader>gD', '<cmd>GoDoc<CR>', { buffer = true, desc = 'Go Documentation' })
+    vim.keymap.set('n', '<leader>gf', '<cmd>GoFillStruct<CR>', { buffer = true, desc = 'Go Fill Struct' })
+    vim.keymap.set('n', '<leader>ge', '<cmd>GoIfErr<CR>', { buffer = true, desc = 'Go If Err' })
+  end,
+})
+
+-- Configure go.nvim
+require('go').setup {
+  -- Add any specific configuration here
+  goimport = 'gopls', -- use gopls for auto import
+  gofmt = 'gofumpt', -- use gofumpt for better formatting
+  max_line_len = 120,
+  tag_transform = false,
+  test_dir = '',
+  comment_placeholder = '   ',
+  lsp_cfg = true, -- false: use your own lspconfig
+  lsp_gofumpt = true, -- true: set default gofmt in gopls format to gofumpt
   lsp_on_attach = true, -- use on_attach from go.nvim
   dap_debug = true,
 }
