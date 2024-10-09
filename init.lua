@@ -1517,8 +1517,6 @@ require('lazy').setup {
       dap.listeners.before.event_exited['dapui_config'] = dapui.close
     end,
   },
-
-  -- **Avante.nvim Integration**
   {
     'yetone/avante.nvim',
     lazy = false,
@@ -1555,7 +1553,6 @@ require('lazy').setup {
       },
     },
     opts = {
-      -- Add any avante.nvim specific options here
       provider = 'claude', -- Use Claude AI
       auto_suggestions_provider = 'claude',
       behaviour = {
@@ -1565,12 +1562,16 @@ require('lazy').setup {
         auto_apply_diff_after_generation = false,
         support_paste_from_clipboard = false,
       },
+      claude = {
+        api_key_name = 'ANTHROPIC_API_KEY', -- Ensure the API key name is set correctly
+      },
     },
-    config = function()
-      require('avante').setup {
-        -- Add any avante.nvim specific options here
-      }
+    -- Option 1: Modify the config function to pass opts
+    config = function(_, opts)
+      require('avante').setup(opts)
     end,
+    -- Option 2: Remove the config function entirely
+    -- config = true,
   },
 }
 
@@ -1634,6 +1635,7 @@ wk.register {
     },
     ['<leader>'] = { name = ' Smart Open' },
     o = { name = ' Octo (GitHub)' },
+    e = { '<cmd>Neotree toggle<CR>', 'Toggle file explorer' },
   },
 }
 
@@ -1659,8 +1661,8 @@ wk.register {
   ['<leader><leader>'] = { 'Smart Open (Telescope)' },
 }
 
--- File explorer keybinding
-map('n', '<leader>e', '<cmd>Neotree toggle<CR>', { desc = 'Toggle file explorer' })
+-- File explorer keybinding (global)
+vim.keymap.set('n', '<leader>e', '<cmd>Neotree toggle<CR>', { noremap = true, silent = true, desc = 'Toggle file explorer' })
 
 -- Trouble setup
 require('trouble').setup {
