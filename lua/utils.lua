@@ -1,7 +1,7 @@
 -- lua/utils.lua
 
 local M = {}
-print("utils.lua loaded!")  -- Debugging line
+print("utils.lua loaded!") -- Debugging line
 -- Function to collect and copy all error logs to the clipboard
 function M.copy_errors_to_clipboard()
   local all_diagnostics = vim.diagnostic.get(nil)
@@ -17,21 +17,20 @@ function M.copy_errors_to_clipboard()
     local bufname = vim.api.nvim_buf_get_name(bufnr)
     local message = diagnostic.message
     local lnum = diagnostic.lnum + 1 -- Line numbers are 0-indexed
-    local col = diagnostic.col + 1 -- Column numbers are 0-indexed
+    local col = diagnostic.col + 1   -- Column numbers are 0-indexed
     local severity = vim.diagnostic.severity[diagnostic.severity]
 
     table.insert(log_lines, string.format("%s:%d:%d [%s] %s", bufname, lnum, col, severity, message))
   end
 
   local result = table.concat(log_lines, "\n")
-  
+
   -- Copy result to clipboard
   vim.fn.setreg('+', result)
-  
+
   print("Copied error logs to clipboard!")
 end
 
-return M
 -- Function to set transparency
 function M.set_transparency()
   local groups = {
@@ -93,7 +92,7 @@ local current_theme_index = 1
 function M.toggle_theme()
   current_theme_index = (current_theme_index % #themes) + 1
   local new_theme = themes[current_theme_index]
-  vim.cmd.colorscheme(new_theme)
+
   vim.o.background = 'dark'
 
   if new_theme == 'tokyonight-night' then
@@ -172,6 +171,8 @@ function M.toggle_theme()
     vim.g.nightflyCursorColor = true
     vim.g.nightflyTransparent = true
   end
+
+  vim.cmd.colorscheme(new_theme)
 
   print('Switched to ' .. new_theme .. ' theme')
 end

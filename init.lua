@@ -8,10 +8,8 @@ vim.g.have_nerd_font = true
 -- Load settings
 require 'settings'
 
-
 -- Load plugins
 require 'plugins'
-
 
 -- Load keybindings
 require 'keybindings'
@@ -34,10 +32,8 @@ require 'autocmds'
 -- Load avante_lib (if applicable)
 require('avante_lib').load()
 
-
-
 -- Set initial colorscheme
-vim.cmd.colorscheme 'tokyonight-night'
+
 require('tokyonight').setup {
   style = 'night',
   transparent = true,
@@ -55,6 +51,8 @@ require('tokyonight').setup {
     colors.bg_statusline = 'NONE'
   end,
 }
+
+vim.cmd.colorscheme 'tokyonight-night'
 -- Define a user command to copy errors to the clipboard
 vim.api.nvim_create_user_command('CopyErrors', function()
   require('utils').copy_errors_to_clipboard()
