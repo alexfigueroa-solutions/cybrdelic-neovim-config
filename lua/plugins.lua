@@ -75,7 +75,6 @@ require('lazy').setup {
       }
     end,
   },
-
   -- Bufferline
   {
     'akinsho/bufferline.nvim',
@@ -83,21 +82,30 @@ require('lazy').setup {
     dependencies = { 'nvim-tree/nvim-web-devicons' },
     config = function()
       require('bufferline').setup {
-        options = {
-          numbers = 'ordinal',
-          close_command = 'bdelete! %d',
-          right_mouse_command = 'bdelete! %d',
-          left_mouse_command = 'buffer %d',
-          indicator = { style = 'underline' },
-          buffer_close_icon = '',
-          modified_icon = '●',
-          close_icon = '',
-          left_trunc_marker = '',
-          right_trunc_marker = '',
-          always_show_bufferline = true,
-          sort = 'relative_directory',
-        },
-      }
+          options = {
+            -- Ensure components are in a valid list
+            numbers = 'ordinal',
+            close_command = 'bdelete! %d',
+            right_mouse_command = 'bdelete! %d',
+            left_mouse_command = 'buffer %d',
+            indicator = { style = 'underline' },
+            buffer_close_icon = '',
+            modified_icon = '●',
+            close_icon = '',
+            left_trunc_marker = '',
+            right_trunc_marker = '',
+            -- Ensure that the segments are correctly defined as a list
+            offsets = {
+              {
+                filetype = 'NvimTree',
+                text = 'File Explorer',
+                text_align = 'left',
+              },
+            },
+            always_show_bufferline = true,
+          },
+        }
+
     end,
   },
 
