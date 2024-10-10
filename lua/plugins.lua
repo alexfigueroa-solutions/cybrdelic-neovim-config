@@ -360,4 +360,58 @@ require('lazy').setup {
       require('symbols-outline').setup()
     end,
   },
+  -- **Avante.nvim Integration**
+  {
+    'yetone/avante.nvim',
+    lazy = false,
+    version = false, -- Always pull the latest changes
+    build = 'make', -- Build command for avante.nvim
+    dependencies = {
+      'nvim-treesitter/nvim-treesitter',
+      'stevearc/dressing.nvim',
+      'nvim-lua/plenary.nvim',
+      'MunifTanjim/nui.nvim',
+      'nvim-tree/nvim-web-devicons',
+      'zbirenbaum/copilot.lua',
+      -- Optional dependencies
+      {
+        'HakonHarnes/img-clip.nvim',
+        event = 'VeryLazy',
+        opts = {
+          default = {
+            embed_image_as_base64 = false,
+            prompt_for_file_name = false,
+            drag_and_drop = {
+              insert_mode = true,
+            },
+            use_absolute_path = true,
+          },
+        },
+      },
+      {
+        'MeanderingProgrammer/render-markdown.nvim',
+        opts = {
+          file_types = { 'markdown', 'Avante' },
+        },
+        ft = { 'markdown', 'Avante' },
+      },
+    },
+    opts = {
+      -- Add any avante.nvim specific options here
+      provider = 'claude', -- Use Claude AI
+      auto_suggestions_provider = 'claude',
+      behaviour = {
+        auto_suggestions = false,
+        auto_set_highlight_group = true,
+        auto_set_keymaps = true,
+        auto_apply_diff_after_generation = false,
+        support_paste_from_clipboard = false,
+      },
+    },
+    config = function()
+      require('avante').setup {
+        -- Add any avante.nvim specific options here
+      }
+    end,
+  },
 }
