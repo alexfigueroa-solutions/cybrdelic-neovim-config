@@ -11,11 +11,24 @@ vim.api.nvim_create_autocmd('TextYankPost', {
   end,
 })
 
+-- Utility function to check if formatting is supported
+local function formatting_supported()
+  local clients = vim.lsp.get_active_clients { bufnr = 0 }
+  for _, client in ipairs(clients) do
+    if client.supports_method 'textDocument/formatting' then
+      return true
+    end
+  end
+  return false
+end
+
 -- Autoformat on save
 vim.api.nvim_create_autocmd('BufWritePre', {
   pattern = '*',
   callback = function()
-    vim.lsp.buf.format()
+    if formatting_supported() then
+      vim.lsp.buf.format()
+    end
   end,
 })
 

@@ -5,8 +5,8 @@ vim.g.mapleader = ' '
 vim.g.maplocalleader = ' '
 
 -- Which-key setup
-local wk = require('which-key')
-wk.setup({
+local wk = require 'which-key'
+wk.setup {
   plugins = {
     marks = true,
     registers = true,
@@ -45,7 +45,7 @@ wk.setup({
     i = { 'j', 'k' },
     v = { 'j', 'k' },
   },
-})
+}
 
 -- General Keybindings
 wk.register({
@@ -60,7 +60,12 @@ wk.register({
   t = {
     name = 'Toggle',
     t = { ':TransparentToggle<CR>', 'Toggle Transparency' },
-    s = { function() require('utils').toggle_theme() end, 'Toggle Theme' },
+    s = {
+      function()
+        require('utils').toggle_theme()
+      end,
+      'Toggle Theme',
+    },
     h = { ':Themery<CR>', 'Theme Selector' },
     n = { ':set nu! rnu!<CR>', 'Toggle Line Numbers' },
     w = { ':set wrap!<CR>', 'Toggle Wrap' },
@@ -76,6 +81,7 @@ wk.register({
     i = { '<cmd>LspInfo<CR>', 'LSP Info' },
     I = { '<cmd>Mason<CR>', 'Mason Info' },
     f = { '<cmd>lua vim.lsp.buf.format { async = true }<CR>', 'Format Document' },
+    h = { vim.lsp.buf.hover, 'Hover Documentation' },
   },
 
   -- Diagnostics navigation
@@ -114,11 +120,36 @@ wk.register({
   -- Notes
   n = {
     name = 'Notes',
-    o = { function() require('notes').open_notes() end, 'Open Notes Menu' },
-    n = { function() require('notes').create_new_note() end, 'Create New Note' },
-    r = { function() require('notes').view_recent_notes() end, 'View Recent Notes' },
-    s = { function() require('notes').search_notes_by_tag() end, 'Search Notes by Tag' },
-    t = { function() require('notes').add_tag() end, 'Add Tag to Note' },
+    o = {
+      function()
+        require('notes').open_notes()
+      end,
+      'Open Notes Menu',
+    },
+    n = {
+      function()
+        require('notes').create_new_note()
+      end,
+      'Create New Note',
+    },
+    r = {
+      function()
+        require('notes').view_recent_notes()
+      end,
+      'View Recent Notes',
+    },
+    s = {
+      function()
+        require('notes').search_notes_by_tag()
+      end,
+      'Search Notes by Tag',
+    },
+    t = {
+      function()
+        require('notes').add_tag()
+      end,
+      'Add Tag to Note',
+    },
   },
 
   -- Octo (GitHub)
@@ -159,7 +190,9 @@ vim.keymap.set('n', '[c', function()
   if vim.wo.diff then
     return '[c'
   else
-    vim.schedule(function() require('gitsigns').prev_hunk() end)
+    vim.schedule(function()
+      require('gitsigns').prev_hunk()
+    end)
     return '<Ignore>'
   end
 end, { expr = true, desc = 'Previous Hunk' })
@@ -168,7 +201,9 @@ vim.keymap.set('n', ']c', function()
   if vim.wo.diff then
     return ']c'
   else
-    vim.schedule(function() require('gitsigns').next_hunk() end)
+    vim.schedule(function()
+      require('gitsigns').next_hunk()
+    end)
     return '<Ignore>'
   end
 end, { expr = true, desc = 'Next Hunk' })
@@ -240,43 +275,6 @@ wk.register({
   S = { ':HopWord<CR>', 'Hop to Word' },
 }, { prefix = '' })
 
--- Smart Search Keybindings
-wk.register({
-  s = {
-    name = 'Smart Search',
-    f = { '<cmd>Telescope find_files<CR>', 'Find and Preview Files' },
-    g = { '<cmd>Telescope live_grep<CR>', 'Live Grep' },
-    b = { '<cmd>Telescope buffers<CR>', 'Find Buffers' },
-    h = { '<cmd>Telescope help_tags<CR>', 'Help Tags' },
-    -- Additional smart search keybindings can be added here
-  },
-}, { prefix = '<leader>' })
-
--- Buffer Management Keybindings
-wk.register({
-  b = {
-    name = 'Buffer',
-    d = { '<cmd>Bdelete<CR>', 'Delete Buffer' },  -- Use ':bdelete<CR>' if not using bufdelete.nvim
-    -- Additional buffer-related keybindings can go here
-  },
-}, { prefix = '<leader>' })
-
--- Tab Navigation Keybindings
-wk.register({
-  t = {
-    name = 'Tab',
-    n = { '<cmd>tabnext<CR>', 'Next Tab' },
-    p = { '<cmd>tabprevious<CR>', 'Previous Tab' },
-    -- Additional tab-related keybindings can go here
-  },
-}, { prefix = '<leader>' })
-
--- Map <leader><Tab> to cycle to the next tab
-vim.keymap.set('n', '<leader><Tab>', '<cmd>tabnext<CR>', { desc = 'Next Tab' })
-
--- Map <leader><S-Tab> to cycle to the previous tab
-vim.keymap.set('n', '<leader><S-Tab>', '<cmd>tabprevious<CR>', { desc = 'Previous Tab' })
-
 -- DAP (Debug Adapter Protocol) keybindings
 wk.register({
   d = {
@@ -293,4 +291,52 @@ wk.register({
   },
 }, { prefix = '<leader>' })
 
--- End of keybindings.lua
+-- Smart Search Keybindings
+wk.register({
+  s = {
+    name = 'Smart Search',
+    f = { '<cmd>Telescope find_files<CR>', 'Find and Preview Files' },
+    g = { '<cmd>Telescope live_grep<CR>', 'Live Grep' },
+    b = { '<cmd>Telescope buffers<CR>', 'Find Buffers' },
+    h = { '<cmd>Telescope help_tags<CR>', 'Help Tags' },
+    -- Additional smart search keybindings can be added here
+  },
+}, { prefix = '<leader>' })
+
+-- Save and Quit Keybindings
+wk.register({
+  w = {
+    name = 'Write',
+    w = { ':w<CR>', 'Save File' },
+    q = { ':wq<CR>', 'Save and Quit' },
+    Q = { ':q!<CR>', 'Quit without Saving' },
+  },
+}, { prefix = '<leader>' })
+
+-- Tab Navigation Keybindings
+wk.register({
+  t = {
+    name = 'Tab',
+    n = { '<cmd>tabnext<CR>', 'Next Tab' },
+    p = { '<cmd>tabprevious<CR>', 'Previous Tab' },
+  },
+  ['<Tab>'] = { '<cmd>tabnext<CR>', 'Next Tab' },
+  ['<S-Tab>'] = { '<cmd>tabprevious<CR>', 'Previous Tab' },
+}, { prefix = '<leader>' })
+
+-- Smart Search (Ctrl+F) via Telescope
+vim.keymap.set('n', '<C-f>', function()
+  local opts = {
+    prompt_title = 'Smart Search',
+    path_display = { 'smart' },
+    word_match = '-w',
+    only_sort_text = true,
+    search = '',
+  }
+
+  if vim.fn.expand '%:p' ~= '' then
+    opts.cwd = vim.fn.expand '%:p:h'
+  end
+
+  require('telescope.builtin').grep_string(opts)
+end, { desc = 'Smart Search (Ctrl+F)' })

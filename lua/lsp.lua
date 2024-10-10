@@ -1,10 +1,10 @@
 -- lsp.lua
 
 -- LSP and Mason setup
-require('mason').setup({
+require('mason').setup {
   automatic_installation = true,
-})
-require('mason-lspconfig').setup({
+}
+require('mason-lspconfig').setup {
   ensure_installed = {
     'lua_ls',
     'rust_analyzer',
@@ -19,10 +19,10 @@ require('mason-lspconfig').setup({
     'dockerls',
     'clangd',
   },
-})
+}
 
-local lspconfig = require('lspconfig')
-local cmp_nvim_lsp = require('cmp_nvim_lsp')
+local lspconfig = require 'lspconfig'
+local cmp_nvim_lsp = require 'cmp_nvim_lsp'
 
 local capabilities = vim.lsp.protocol.make_client_capabilities()
 capabilities = cmp_nvim_lsp.default_capabilities(capabilities)
@@ -33,6 +33,7 @@ local on_attach = function(client, bufnr)
   keymap('n', 'gD', vim.lsp.buf.declaration, bufopts)
   keymap('n', 'gd', vim.lsp.buf.definition, bufopts)
   keymap('n', 'K', vim.lsp.buf.hover, bufopts)
+  keymap('n', 'gh', vim.lsp.buf.hover, bufopts) -- Alternative hover keybinding
   keymap('n', 'gi', vim.lsp.buf.implementation, bufopts)
   keymap('n', '<C-k>', vim.lsp.buf.signature_help, bufopts)
   keymap('n', '<space>wa', vim.lsp.buf.add_workspace_folder, bufopts)
@@ -50,7 +51,7 @@ local on_attach = function(client, bufnr)
 
   if client.server_capabilities.documentHighlightProvider then
     vim.api.nvim_create_augroup('LspDocumentHighlight', { clear = false })
-    vim.api.nvim_clear_autocmds({ group = 'LspDocumentHighlight', buffer = bufnr })
+    vim.api.nvim_clear_autocmds { group = 'LspDocumentHighlight', buffer = bufnr }
     vim.api.nvim_create_autocmd('CursorHold', {
       group = 'LspDocumentHighlight',
       buffer = bufnr,
@@ -123,7 +124,7 @@ for type, icon in pairs(signs) do
   vim.fn.sign_define(hl, { text = icon, texthl = hl, numhl = '' })
 end
 
-vim.diagnostic.config({
+vim.diagnostic.config {
   virtual_text = {
     prefix = '●',
   },
@@ -131,13 +132,13 @@ vim.diagnostic.config({
   underline = true,
   update_in_insert = false,
   severity_sort = true,
-})
+}
 
-local null_ls = require('null-ls')
-null_ls.setup({
+local null_ls = require 'null-ls'
+null_ls.setup {
   sources = {
-    null_ls.builtins.formatting.prettier.with({ filetypes = { 'javascript', 'typescript', 'css', 'html', 'json', 'yaml', 'markdown' } }),
-    null_ls.builtins.formatting.black.with({ extra_args = { '--fast' } }),
+    null_ls.builtins.formatting.prettier.with { filetypes = { 'javascript', 'typescript', 'css', 'html', 'json', 'yaml', 'markdown' } },
+    null_ls.builtins.formatting.black.with { extra_args = { '--fast' } },
     null_ls.builtins.formatting.stylua,
     null_ls.builtins.formatting.shfmt,
     null_ls.builtins.diagnostics.eslint_d,
@@ -146,9 +147,9 @@ null_ls.setup({
     null_ls.builtins.code_actions.gitsigns,
   },
   on_attach = function(client, bufnr)
-    if client.supports_method('textDocument/formatting') then
+    if client.supports_method 'textDocument/formatting' then
       local augroup = vim.api.nvim_create_augroup('LspFormatting', {})
-      vim.api.nvim_clear_autocmds({ group = augroup, buffer = bufnr })
+      vim.api.nvim_clear_autocmds { group = augroup, buffer = bufnr }
       vim.api.nvim_create_autocmd('BufWritePre', {
         group = augroup,
         buffer = bufnr,
@@ -158,4 +159,4 @@ null_ls.setup({
       })
     end
   end,
-})
+}

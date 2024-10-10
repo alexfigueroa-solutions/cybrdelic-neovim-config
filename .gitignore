@@ -12,3 +12,6 @@ kickstart.txt
 .stylua.toml
 spell/
 lazy-lock.json
+lua/custom/
+lua/kickstart/
+index_cache.json
