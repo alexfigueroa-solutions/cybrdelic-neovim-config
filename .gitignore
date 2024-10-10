@@ -2,7 +2,6 @@ tags
 test.sh
 .luarc.json
 nvim
-lua/
 LICENSE.md
 .stylus.toml
 README.md
