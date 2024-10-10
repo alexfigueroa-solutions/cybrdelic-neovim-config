@@ -1,9 +1,5 @@
 -- lua/keybindings.lua
 
--- Set leader keys
-vim.g.mapleader = ' '
-vim.g.maplocalleader = ' '
-
 -- Which-key setup
 local wk = require 'which-key'
 wk.setup {
@@ -325,7 +321,7 @@ wk.register({
 }, { prefix = '<leader>' })
 
 -- Smart Search (Ctrl+F) via Telescope
-vim.keymap.set('n', '<C-f>', function()
+vim.keymap.set('n', '<leader>sf', function()
   local opts = {
     prompt_title = 'Smart Search',
     path_display = { 'smart' },
@@ -339,4 +335,11 @@ vim.keymap.set('n', '<C-f>', function()
   end
 
   require('telescope.builtin').grep_string(opts)
-end, { desc = 'Smart Search (Ctrl+F)' })
+end, { desc = 'Smart Search (Leader+sF)' })
+
+-- Buffer Navigation
+vim.keymap.set('n', '<S-l>', ':BufferLineCycleNext<CR>', { desc = 'Next Buffer' })
+vim.keymap.set('n', '<S-h>', ':BufferLineCyclePrev<CR>', { desc = 'Previous Buffer' })
+vim.keymap.set('n', '<leader>bQ', ':BufferLineCloseRight<CR>', { desc = 'Close Buffers to the Right' })
+vim.keymap.set('n', '<leader>bq', ':BufferLineCloseLeft<CR>', { desc = 'Close Buffers to the Left' })
+vim.keymap.set('n', '<leader>bn', ':BufferLinePick<CR>', { desc = 'Pick Buffer' })

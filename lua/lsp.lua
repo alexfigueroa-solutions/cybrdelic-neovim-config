@@ -48,7 +48,7 @@ local on_attach = function(client, bufnr)
   keymap('n', '<space>f', function()
     vim.lsp.buf.format { async = true }
   end, bufopts)
-
+  -- Document Highlighting
   if client.server_capabilities.documentHighlightProvider then
     vim.api.nvim_create_augroup('LspDocumentHighlight', { clear = false })
     vim.api.nvim_clear_autocmds { group = 'LspDocumentHighlight', buffer = bufnr }
@@ -64,8 +64,11 @@ local on_attach = function(client, bufnr)
     })
   end
 
+  -- CodeLens Configuration
   if client.server_capabilities.codeLensProvider then
+    vim.api.nvim_create_augroup('LspCodeLens', { clear = false })
     vim.api.nvim_create_autocmd({ 'BufEnter', 'CursorHold', 'InsertLeave' }, {
+      group = 'LspCodeLens',
       buffer = bufnr,
       callback = vim.lsp.codelens.refresh,
     })
@@ -92,7 +95,6 @@ for _, server in ipairs(servers) do
     on_attach = on_attach,
     capabilities = capabilities,
   }
-
   if server == 'lua_ls' then
     opts.settings = {
       Lua = {
@@ -103,10 +105,13 @@ for _, server in ipairs(servers) do
           library = vim.api.nvim_get_runtime_file('', true),
           checkThirdParty = false,
         },
+        -- Enable codeLens
+        codeLens = {
+          enable = true,
+        },
       },
     }
   end
-
   lspconfig[server].setup(opts)
 end
 

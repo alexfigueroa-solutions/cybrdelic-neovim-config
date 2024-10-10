@@ -6,7 +6,7 @@ vim.opt.relativenumber = true
 vim.opt.cursorline = true
 vim.opt.colorcolumn = '80'
 vim.opt.signcolumn = 'yes'
-vim.opt.cmdheight = 0
+vim.opt.cmdheight = 2
 vim.opt.pumheight = 10
 vim.opt.laststatus = 3
 vim.opt.showmode = false
@@ -19,6 +19,7 @@ vim.opt.splitright = true
 vim.opt.splitbelow = true
 vim.opt.conceallevel = 2
 vim.opt.concealcursor = 'n'
+vim.opt.hidden = true
 
 -- Mouse and clipboard
 vim.opt.mouse = 'a'

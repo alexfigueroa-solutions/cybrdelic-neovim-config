@@ -20,8 +20,8 @@ function M.copy_user_flows_to_clipboard()
 end
 
 -- Keybindings for analysis functions
-vim.keymap.set('n', '<leader>tc', M.trace_causal_chain, { desc = 'Trace causal chain' })
 vim.keymap.set('n', '<leader>tu', M.analyze_user_flows, { desc = 'Analyze user flows' })
-vim.keymap.set('n', '<leader>tc', M.copy_user_flows_to_clipboard, { desc = 'Copy user flows to clipboard' })
+vim.keymap.set('n', '<leader>tc', M.trace_causal_chain, { desc = 'Trace causal chain' })
+vim.keymap.set('n', '<leader>cc', M.copy_user_flows_to_clipboard, { desc = 'Copy user flows to clipboard' })
 
 return M
