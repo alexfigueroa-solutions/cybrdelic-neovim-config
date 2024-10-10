@@ -148,7 +148,7 @@ require('lazy').setup {
   {
     'danielfalk/smart-open.nvim',
     branch = '0.2.x',
-    dependencies = { 'kkharji/sqlite.lua', 'nvim-telescope/telescope-fzf-native.nvim', 'nvim-telescope/telescope-fzy-native.nvim' },
+    dependencies = { 'kkharji/sqlite.lua', 'nvim-telescope/telescope-fzf-native.nvim', 'nvim-telescope/telescope-fzf-native.nvim' },
     config = function()
       require('telescope').load_extension 'smart_open'
     end,
