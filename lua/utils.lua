@@ -1,7 +1,37 @@
 -- lua/utils.lua
 
 local M = {}
+print("utils.lua loaded!")  -- Debugging line
+-- Function to collect and copy all error logs to the clipboard
+function M.copy_errors_to_clipboard()
+  local all_diagnostics = vim.diagnostic.get(nil)
+  local log_lines = {}
 
+  if #all_diagnostics == 0 then
+    print("No errors or logs found.")
+    return
+  end
+
+  for _, diagnostic in ipairs(all_diagnostics) do
+    local bufnr = diagnostic.bufnr
+    local bufname = vim.api.nvim_buf_get_name(bufnr)
+    local message = diagnostic.message
+    local lnum = diagnostic.lnum + 1 -- Line numbers are 0-indexed
+    local col = diagnostic.col + 1 -- Column numbers are 0-indexed
+    local severity = vim.diagnostic.severity[diagnostic.severity]
+
+    table.insert(log_lines, string.format("%s:%d:%d [%s] %s", bufname, lnum, col, severity, message))
+  end
+
+  local result = table.concat(log_lines, "\n")
+  
+  -- Copy result to clipboard
+  vim.fn.setreg('+', result)
+  
+  print("Copied error logs to clipboard!")
+end
+
+return M
 -- Function to set transparency
 function M.set_transparency()
   local groups = {
