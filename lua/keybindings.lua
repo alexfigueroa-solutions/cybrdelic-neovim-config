@@ -1,4 +1,7 @@
 -- lua/keybindings.lua
+-- Set space as the leader key
+vim.g.mapleader = ' ' -- Space as the leader key
+vim.g.maplocalleader = ' ' -- Space as the local leader key
 
 -- Which-key setup
 local wk = require 'which-key'
@@ -295,7 +298,6 @@ wk.register({
     g = { '<cmd>Telescope live_grep<CR>', 'Live Grep' },
     b = { '<cmd>Telescope buffers<CR>', 'Find Buffers' },
     h = { '<cmd>Telescope help_tags<CR>', 'Help Tags' },
-    -- Additional smart search keybindings can be added here
   },
 }, { prefix = '<leader>' })
 
@@ -343,3 +345,23 @@ vim.keymap.set('n', '<S-h>', ':BufferLineCyclePrev<CR>', { desc = 'Previous Buff
 vim.keymap.set('n', '<leader>bQ', ':BufferLineCloseRight<CR>', { desc = 'Close Buffers to the Right' })
 vim.keymap.set('n', '<leader>bq', ':BufferLineCloseLeft<CR>', { desc = 'Close Buffers to the Left' })
 vim.keymap.set('n', '<leader>bn', ':BufferLinePick<CR>', { desc = 'Pick Buffer' })
+
+-- Avante keybindings
+wk.register({
+  a = {
+    name = 'Avante',
+    d = { require('avante_lib').open_dashboard, 'Open Avante Dashboard' },
+    s = { require('avante_lib').toggle_sidebar, 'Toggle Avante Sidebar' },
+    c = {
+      function()
+        vim.ui.input({ prompt = 'Enter Avante Command: ' }, function(cmd)
+          if cmd then
+            require('avante_lib').execute_command(cmd)
+          end
+        end)
+      end,
+      'Execute Avante Command',
+    },
+  },
+}, { prefix = '<leader>' })
+
